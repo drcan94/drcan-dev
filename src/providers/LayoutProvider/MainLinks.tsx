@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  IconGitPullRequest, IconHome, IconHome2, IconHomeBolt, IconHomeHand, IconHomeOff,
+  IconHome
 } from "@tabler/icons-react";
 import {
   ThemeIcon,
