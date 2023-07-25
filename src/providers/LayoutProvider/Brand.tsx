@@ -30,10 +30,11 @@ export const Brand: React.FC<{
         }`,
       })}
     >
-      <Group position="apart">
+      <Group position="apart" align="center" style={{
+        minWidth: "fit-content"
+      }} noWrap> 
         <Box
           onClick={() => sm && setOpened((o: boolean) => !o)}
-          style={{ height: 26 }}
           component={Link}
           href={"/"}
         >

@@ -13,7 +13,6 @@ export default class _Document extends Document {
         <div id="backdrop-root" />
         <div id="overlay-root" />
         <body>
-
           <Main />
           <NextScript />
         </body>

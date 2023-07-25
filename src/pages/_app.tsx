@@ -37,8 +37,7 @@ const MyApp: AppType<{
         <PersistGate persistor={store.__persistor} loading={null}>
           <LayoutProvider>
             <Component {...restPageProps} />
-          </LayoutProvider>
-          
+          </LayoutProvider>  
         </PersistGate>
       </Provider>
     </SessionProvider>

@@ -24,6 +24,9 @@ export const User: React.FC = () => {
       }}
     >
       <UnstyledButton
+        component="a"
+        href="https://twitter.com/drcan94"
+        target="_blank"
         sx={{
           display: "block",
           width: "100%",
@@ -50,7 +53,7 @@ export const User: React.FC = () => {
               Burak CAN
             </Text>
             <Text color={theme.colors.lime[9]} size="sm">
-              drcan94@gmail.com
+              drcan94
             </Text>
           </Box>
           {theme.dir === "ltr" ? (

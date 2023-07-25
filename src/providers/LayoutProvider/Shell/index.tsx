@@ -131,7 +131,7 @@ const Shell: NextPage<{ children: React.ReactNode }> = ({ children }) => {
             />
             {/* </MediaQuery> */}
 
-            <Text>Application header</Text>
+            <Text>Blog</Text>
           </div>
         </Header>
       }

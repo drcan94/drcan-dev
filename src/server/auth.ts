@@ -7,7 +7,8 @@ import {
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { env } from "~/env.mjs";
 import { prisma } from "~/server/db";
-import GoogleProvider from 'next-auth/providers/google';
+import GoogleProvider from "next-auth/providers/google";
+import { error } from "console";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -29,6 +30,7 @@ declare module "next-auth" {
   //   // role: UserRole;
   // }
 }
+const approvedEmails = ["drcan94@gmail.com"];
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
@@ -37,6 +39,13 @@ declare module "next-auth" {
  */
 export const authOptions: NextAuthOptions = {
   callbacks: {
+    signIn({ user }) {
+      const email = user?.email?.toLowerCase();
+      if (!approvedEmails.includes(email!)) {
+        return "/unauthorized"
+      }
+      return true;
+    },
     session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;

@@ -1,12 +1,6 @@
 import React from "react";
 import {
-  IconGitPullRequest,
-  IconAlertCircle,
-  IconLetterC,
-  IconUsers,
-  IconLogin,
-  // IconMessages,
-  // IconDatabase
+  IconGitPullRequest, IconHome, IconHome2, IconHomeBolt, IconHomeHand, IconHomeOff,
 } from "@tabler/icons-react";
 import {
   ThemeIcon,
@@ -38,7 +32,7 @@ const MainLink: React.FC<MainLinkProps> = ({
     <UnstyledButton
       sx={(theme: MantineTheme) => ({
         display: "block",
-        width: "100%",
+        width: 250,
         padding: theme ? theme.spacing.xs : 0,
         borderRadius: theme.radius.sm,
         color:
@@ -70,34 +64,10 @@ const MainLink: React.FC<MainLinkProps> = ({
 
 const data = [
   {
-    icon: <IconGitPullRequest size={16} />,
+    icon: <IconHome size={20} />,
     color: "blue",
-    label: "Expenses",
-    path: "/expenses",
-  },
-  {
-    icon: <IconAlertCircle size={16} />,
-    color: "teal",
-    label: "Search Bar",
-    path: "/search",
-  },
-  {
-    icon: <IconLetterC size={16} />,
-    color: "violet",
-    label: "Course Goals",
-    path: "/course/goals",
-  },
-  {
-    icon: <IconUsers size={16} />,
-    color: "grape",
-    label: "Users",
-    path: "/users",
-  },
-  {
-    icon: <IconLogin size={16} />,
-    color: "cyan",
-    label: "Login Demo",
-    path: "/logindemo",
+    label: "Anasayfa",
+    path: "/",
   },
 ];
 
