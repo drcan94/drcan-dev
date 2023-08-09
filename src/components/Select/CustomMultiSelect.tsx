@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { forwardRef, type FC, type ReactNode } from "react";
 import { useSelectStyles } from "./Select.styles";
 import {

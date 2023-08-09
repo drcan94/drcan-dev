@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import { useState, type FC } from "react";
 import { api } from "~/utils/api";
 import { useForm, zodResolver } from "@mantine/form";

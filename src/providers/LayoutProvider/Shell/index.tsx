@@ -22,9 +22,9 @@ const Shell: NextPage<{ children: React.ReactNode }> = ({ children }) => {
   const theme = useMantineTheme();
   const rtl = useSelector(selectRtl);
 
-  const xs = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`, undefined, {
-    getInitialValueInEffect: false,
-  });
+  // const xs = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`, undefined, {
+  //   getInitialValueInEffect: false,
+  // });
 
   const sm = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`, undefined, {
     getInitialValueInEffect: false,

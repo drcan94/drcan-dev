@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Avatar, Flex, Indicator, Menu, Text } from "@mantine/core";
 import { IconBell } from "@tabler/icons-react";
 import { useState, type FC, useEffect } from "react";

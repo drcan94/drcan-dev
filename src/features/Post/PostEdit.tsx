@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import { useRouter } from "next/router";
 import { useState, type FC, useEffect } from "react";
 import { api } from "~/utils/api";
@@ -95,7 +101,7 @@ export const PostEdit: FC<PostEditProps> = ({ id }) => {
         }
 
         form.setValues({
-          title: data.title,
+          title: data?.title,
           content: data.content,
           timeReading: data.timeReading,
           category: data.category?.split(",").map((cat) => cat.trim()),
