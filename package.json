@@ -68,5 +68,10 @@
   },
   "ct3aMetadata": {
     "initVersion": "7.10.1"
+  },
+  "browser": {
+    "fs": false,
+    "path": false,
+    "os": false
   }
 }

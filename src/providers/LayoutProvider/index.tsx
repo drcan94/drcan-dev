@@ -12,6 +12,7 @@ import {
   toggleRtl,
 } from "~/redux/modules/ui/uiSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { ModalsProvider } from "@mantine/modals";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -88,7 +89,7 @@ const LayoutProvider: NextPage<LayoutProps> = ({ children }) => {
             sm: "48em",
             md: "64em",
             lg: "74em",
-            xl: "90em",
+            xl: "85em",
           },
           spacing: {
             xs: "0.8rem",
@@ -131,7 +132,9 @@ const LayoutProvider: NextPage<LayoutProps> = ({ children }) => {
           },
         }}
       >
-        <Shell>{children}</Shell>
+        <ModalsProvider>
+          <Shell>{children}</Shell>
+        </ModalsProvider>
       </MantineProvider>
     </ColorSchemeProvider>
   );

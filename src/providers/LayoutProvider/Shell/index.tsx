@@ -4,14 +4,15 @@ import { MainLinks } from "../MainLinks";
 import { Brand } from "../Brand";
 import { User } from "../User";
 import { Box, type MantineColor } from "@mantine/core";
+import { HeaderMenu } from "../../../components/Layout/HeaderMenu";
 import {
   AppShell,
   Navbar,
   Header,
-  Text,
   Burger,
   useMantineTheme,
   ScrollArea,
+  Aside,
 } from "@mantine/core";
 import type { NextPage } from "next";
 import { useSelector } from "react-redux";
@@ -30,6 +31,14 @@ const Shell: NextPage<{ children: React.ReactNode }> = ({ children }) => {
   });
 
   const md = useMediaQuery(`(max-width: ${theme.breakpoints.md})`, undefined, {
+    getInitialValueInEffect: false,
+  });
+
+  // const lg = useMediaQuery(`(max-width: ${theme.breakpoints.lg})`, undefined, {
+  //   getInitialValueInEffect: false,
+  // });
+
+  const xl = useMediaQuery(`(max-width: ${theme.breakpoints.xl})`, undefined, {
     getInitialValueInEffect: false,
   });
 
@@ -63,7 +72,7 @@ const Shell: NextPage<{ children: React.ReactNode }> = ({ children }) => {
       if (prevScrollpos > currentScrollPos) {
         setTop("0");
       } else {
-        setTop(md ? "-56px" : "-70px");
+        setTop(md ? "-56" : "-70");
       }
       prevScrollpos = currentScrollPos;
     };
@@ -85,12 +94,14 @@ const Shell: NextPage<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <AppShell
-      layout={xs ? "default" : "alt"}
+      layout={sm ? "default" : "alt"}
       styles={{
         main: {
           background: bgColor,
           paddingLeft: opened && !sm ? "300px !important" : "0 !important",
-          paddingRight: 0,
+          paddingRight: xl
+            ? "0 !important"
+            : "calc(var(--mantine-aside-width, 0px))",
           filter: opened && sm ? "blur(10px)" : "blur(0)",
           transition: "padding-left .3s linear",
         },
@@ -99,18 +110,22 @@ const Shell: NextPage<{ children: React.ReactNode }> = ({ children }) => {
             transition: "top .4s linear, left .3s ease, left .3s linear",
             borderBottomColor: borderColor,
           },
+          aside: {
+            transition: "top .4s linear",
+          },
         },
       }}
       header={
         <Header
           ref={setHeader}
-          top={top}
+          top={`${top}px`}
           height={{ base: 50, md: 70 }}
           p="md"
           dir={rtl ? "rtl" : "ltr"}
           sx={{
             zIndex: 101,
           }}
+          right={0}
         >
           <div
             style={{
@@ -130,12 +145,32 @@ const Shell: NextPage<{ children: React.ReactNode }> = ({ children }) => {
               ml={-5}
             />
             {/* </MediaQuery> */}
-
-            <Text>Blog</Text>
+            <HeaderMenu sm={sm} />
           </div>
         </Header>
       }
       navbarOffsetBreakpoint={"xs"}
+      asideOffsetBreakpoint={"xl"}
+      aside={
+        <Aside
+          hidden={xl}
+          hiddenBreakpoint="xl"
+          width={{ xl: 500, lg: 0 }}
+          top={`calc(var(--mantine-header-height, 0px) + calc(${top}px))`}
+        >
+          <Aside.Section mt={10} px={"sm"}>
+            Header
+          </Aside.Section>
+          <Aside.Section grow component={ScrollArea} mx="-xs" px="xs">
+            <Box p="sm">Body</Box>
+          </Aside.Section>
+          <Aside.Section>
+            <Box py="xs" px="sm">
+              Down
+            </Box>
+          </Aside.Section>
+        </Aside>
+      }
       navbar={
         <Navbar
           ref={setNavbar}
