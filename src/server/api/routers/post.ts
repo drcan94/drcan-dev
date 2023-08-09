@@ -10,7 +10,7 @@ const postSchema = z.object({
 })
 
 export const postRouter = createTRPCRouter({
-  getAllPosts: protectedProcedure.query(({ ctx }) =>
+  getAllPosts: publicProcedure.query(({ ctx }) =>
     ctx.prisma.post.findMany(),
   ),
   getPost: publicProcedure

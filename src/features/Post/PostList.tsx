@@ -8,7 +8,7 @@ export const PostList: FC = () => {
   const allPosts = api.post.getAllPosts.useQuery();
 
   const posts = allPosts.data;
-
+  console.log("posts", posts);
   return (
     <React.Fragment>
       {posts &&
