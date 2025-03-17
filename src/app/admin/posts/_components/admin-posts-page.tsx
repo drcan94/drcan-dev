@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -11,6 +11,37 @@ import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
 import { AdminPostsList } from "./admin-posts-list";
 import { AdminPostsFilters } from "./admin-posts-filters";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function ListSkeleton() {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="rounded-lg border p-4">
+          <Skeleton className="mb-2 h-6 w-2/3" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-6 w-6 rounded-full" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-4 rounded-full" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FiltersSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-6 w-24" />
+        <Skeleton className="h-8 w-32" />
+      </div>
+      <Skeleton className="h-[400px] w-full" />
+    </div>
+  );
+}
 
 export function AdminPostsPage() {
   const router = useRouter();
@@ -151,12 +182,16 @@ export function AdminPostsPage() {
           </div>
 
           {/* Post list with pagination */}
-          <AdminPostsList />
+          <Suspense fallback={<ListSkeleton />}>
+            <AdminPostsList />
+          </Suspense>
         </div>
 
         {/* Filters sidebar */}
         <div className="rounded-lg border p-4">
-          <AdminPostsFilters />
+          <Suspense fallback={<FiltersSkeleton />}>
+            <AdminPostsFilters />
+          </Suspense>
         </div>
       </div>
     </div>
