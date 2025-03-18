@@ -8,7 +8,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
   title: "Blog Yazıları - DrCan.dev",
-  description: "Dr. Burak Can'ın tıp ve yazılım üzerine blog yazıları",
+  description:
+    "Dr. Burak Can'ın sağlık ve yazılım üzerine bilgilendirici blog yazıları. En güncel içerikler ve faydalı bilgiler.",
+  keywords: ["blog yazıları", "sağlık blogu", "yazılım blogu", "Dr. Burak Can"],
+  openGraph: {
+    title: "Blog Yazıları - DrCan.dev",
+    description: "Sağlık ve yazılım dünyasından en güncel yazılar",
+    type: "website",
+    url: "https://drcan.dev/blog",
+    images: [
+      {
+        url: "/opengraph-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "DrCan.dev Blog",
+      },
+    ],
+  },
 };
 
 export default async function BlogPage({
