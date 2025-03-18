@@ -5,6 +5,7 @@ import { type Metadata } from "next";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
+import { LoadingProvider } from "@/components/providers/loading-provider";
 
 import { TRPCReactProvider } from "@/trpc/react";
 import { Navbar } from "@/components/navbar";
@@ -32,25 +33,27 @@ export default function RootLayout({
         className={`${GeistSans.variable} flex min-h-screen flex-col bg-background font-sans antialiased`}
         suppressHydrationWarning
       >
-        <TRPCReactProvider>
-          <SessionProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="dark"
-              enableSystem
-              disableTransitionOnChange
-              storageKey="drcan-dev-theme"
-            >
-              <Navbar />
-              <main className="flex-1">
-                {children}
-                <Analytics />
-              </main>
-              <Footer />
-              <Toaster position="bottom-right" />
-            </ThemeProvider>
-          </SessionProvider>
-        </TRPCReactProvider>
+        <LoadingProvider>
+          <TRPCReactProvider>
+            <SessionProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="dark"
+                enableSystem
+                disableTransitionOnChange
+                storageKey="drcan-dev-theme"
+              >
+                <Navbar />
+                <main className="flex-1">
+                  {children}
+                  <Analytics />
+                </main>
+                <Footer />
+                <Toaster position="bottom-right" />
+              </ThemeProvider>
+            </SessionProvider>
+          </TRPCReactProvider>
+        </LoadingProvider>
       </body>
     </html>
   );
