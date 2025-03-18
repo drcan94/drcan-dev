@@ -82,6 +82,9 @@ export const metadata: Metadata = {
     },
   ],
   manifest: "/site.webmanifest",
+  other: {
+    "google-adsense-account": "ca-pub-4334852497351765",
+  },
 };
 
 export default function RootLayout({
