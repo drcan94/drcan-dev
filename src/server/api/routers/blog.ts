@@ -9,6 +9,46 @@ import {
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
+// Slug oluşturma yardımcı fonksiyonu
+function createSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+// Benzersiz slug oluşturmak için yardımcı fonksiyon
+async function generateUniqueSlug(
+  db: any,
+  title: string,
+  existingId?: string,
+): Promise<string> {
+  let slug = createSlug(title);
+  let counter = 0;
+  let isUnique = false;
+  let testSlug = slug;
+
+  // Slug benzersiz olana kadar döngü
+  while (!isUnique) {
+    // Mevcut bir post güncelleniyorsa, kendi slug'ını kontrol etmekten kaçın
+    const existingPost = await db.blogPost.findFirst({
+      where: {
+        slug: testSlug,
+        ...(existingId ? { NOT: { id: existingId } } : {}),
+      },
+    });
+
+    if (!existingPost) {
+      isUnique = true;
+    } else {
+      counter++;
+      testSlug = `${slug}-${counter}`;
+    }
+  }
+
+  return testSlug;
+}
+
 export const blogRouter = createTRPCRouter({
   // ---------------------------------------------------
   // 1) Yayında olan tüm blog yazılarını getirme
@@ -145,6 +185,33 @@ export const blogRouter = createTRPCRouter({
     }),
 
   // ---------------------------------------------------
+  // 4.1) Slug ile tekil yazı getirme (yayında değilse admin)
+  // ---------------------------------------------------
+  getBySlug: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const post = await ctx.db.blogPost.findUnique({
+        where: { slug: input.slug },
+        include: {
+          author: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+          category: true,
+          tags: true,
+        },
+      });
+
+      if (!post || (!post.published && !ctx.session?.user?.isAdmin)) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      return post;
+    }),
+
+  // ---------------------------------------------------
   // 5) Public arama prosedürü (yayında olan yazılarda)
   // ---------------------------------------------------
   search: publicProcedure
@@ -162,7 +229,8 @@ export const blogRouter = createTRPCRouter({
       const originalQuery = query.trim();
 
       // If query is too short or only whitespace, return empty results
-      if (!originalQuery || originalQuery.length < 3) { // En az 3 karakter gerekli
+      if (!originalQuery || originalQuery.length < 3) {
+        // En az 3 karakter gerekli
         console.log("Search: Query too short, returning empty results");
         return {
           posts: [],
@@ -320,14 +388,14 @@ export const blogRouter = createTRPCRouter({
           ? {
               createdAt: {
                 gte: new Date(fromDate),
-              }
-            } 
+              },
+            }
           : {}),
         ...(toDate
           ? {
               createdAt: {
                 lte: new Date(`${toDate}T23:59:59.999Z`),
-              }
+              },
             }
           : {}),
       };
@@ -421,6 +489,7 @@ export const blogRouter = createTRPCRouter({
         published: z.boolean().default(false),
         categoryId: z.string().optional(),
         tagIds: z.array(z.string()).optional(),
+        slug: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -471,9 +540,14 @@ export const blogRouter = createTRPCRouter({
       }
 
       try {
+        // Slug oluştur veya sağlanan değeri kullan
+        const slug =
+          input.slug || (await generateUniqueSlug(ctx.db, input.title));
+
         return await ctx.db.blogPost.create({
           data: {
             title: input.title,
+            slug,
             content: input.content,
             published: input.published,
             author: {
@@ -515,6 +589,7 @@ export const blogRouter = createTRPCRouter({
         published: z.boolean(),
         categoryId: z.string().optional(),
         tagIds: z.array(z.string()).optional(),
+        slug: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -550,11 +625,21 @@ export const blogRouter = createTRPCRouter({
         categoryId = generalCategory.id;
       }
 
+      // Generate slug if title has changed and slug is not manually set
+      let slug = currentPost.slug;
+      if (input.title !== currentPost.title && !input.slug) {
+        slug = await generateUniqueSlug(ctx.db, input.title, id);
+      } else if (input.slug && input.slug !== currentPost.slug) {
+        // Manually provided slug
+        slug = input.slug;
+      }
+
       // Update post with new data
       return ctx.db.blogPost.update({
         where: { id },
         data: {
           ...data,
+          slug,
           categoryId,
           tags: {
             // If tagIds is provided, we need to disconnect current tags and connect the new ones

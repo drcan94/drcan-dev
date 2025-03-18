@@ -13,10 +13,10 @@ import { Badge } from "@/components/ui/badge";
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: { slug: string };
 }): Promise<Metadata> {
   try {
-    const post = await api.blog.getById({ id: params.id });
+    const post = await api.blog.getBySlug({ slug: params.slug });
     return {
       title: `${post.title} - DrCan.dev`,
       description: `${post.title} - Dr. Burak Can tarafından yazılmış blog yazısı`,
@@ -32,14 +32,14 @@ export async function generateMetadata({
 export default async function BlogPostPage({
   params,
 }: {
-  params: { id: string };
+  params: { slug: string };
 }) {
   // Get the current session to check if user is admin
   const session = await auth();
   const isAdmin = session?.user.isAdmin;
 
   try {
-    const post = await api.blog.getById({ id: params.id });
+    const post = await api.blog.getBySlug({ slug: params.slug });
 
     return (
       <div className="container mx-auto max-w-4xl px-4 py-8 md:py-12">

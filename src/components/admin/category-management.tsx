@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { api } from "@/trpc/react";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { z } from "zod";
@@ -13,7 +13,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -35,9 +34,6 @@ const categorySchema = z.object({
   name: z.string().min(2, {
     message: "Kategori adı en az 2 karakter olmalıdır",
   }),
-  slug: z.string().min(2, {
-    message: "Slug en az 2 karakter olmalıdır",
-  }),
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
@@ -48,13 +44,23 @@ type CategoryData = {
   slug: string;
 };
 
+// Slug oluşturma yardımcı fonksiyonu
+function createSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 export function CategoryManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryData | null>(
     null,
   );
+  const newCategoryInputRef = useRef<HTMLInputElement>(null);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   // Get all categories
   const { data: categories, isLoading } = api.category.getAll.useQuery(
@@ -64,12 +70,11 @@ export function CategoryManagement() {
     },
   );
 
-  // Create form for adding/editing category
+  // Create form for editing category
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: "",
-      slug: "",
     },
   });
 
@@ -78,19 +83,8 @@ export function CategoryManagement() {
     setSelectedCategory(category);
     form.reset({
       name: category.name,
-      slug: category.slug,
     });
     setIsEditModalOpen(true);
-  };
-
-  // Handle add button click
-  const handleAddClick = () => {
-    setSelectedCategory(null);
-    form.reset({
-      name: "",
-      slug: "",
-    });
-    setIsCreateModalOpen(true);
   };
 
   // Handle delete button click
@@ -106,10 +100,12 @@ export function CategoryManagement() {
   const createMutation = api.category.create.useMutation({
     onSuccess: () => {
       toast.success("Kategori başarıyla oluşturuldu");
-      setIsCreateModalOpen(false);
+      setNewCategoryName("");
+      setIsCreating(false);
       void utils.category.getAll.invalidate();
     },
     onError: (error) => {
+      setIsCreating(false);
       toast.error(`Hata: ${error.message}`);
     },
   });
@@ -138,9 +134,18 @@ export function CategoryManagement() {
     },
   });
 
-  // Form submission function (create)
-  const onCreateSubmit = (values: CategoryFormValues) => {
-    createMutation.mutate(values);
+  // Basit kategori oluşturma
+  const handleCreateCategory = () => {
+    if (!newCategoryName || newCategoryName.length < 2) {
+      toast.error("Kategori adı en az 2 karakter olmalıdır");
+      return;
+    }
+
+    setIsCreating(true);
+    createMutation.mutate({
+      name: newCategoryName,
+      slug: createSlug(newCategoryName), // Otomatik slug oluştur
+    });
   };
 
   // Form submission function (update)
@@ -148,7 +153,8 @@ export function CategoryManagement() {
     if (selectedCategory) {
       updateMutation.mutate({
         id: selectedCategory.id,
-        ...values,
+        name: values.name,
+        slug: createSlug(values.name), // Otomatik slug oluştur
       });
     }
   };
@@ -160,26 +166,13 @@ export function CategoryManagement() {
     }
   };
 
-  // Handle slug generation
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    form.setValue("name", name);
-
-    // Only auto-generate slug if it's empty or matches the previous auto-generated slug
-    if (
-      !form.getValues("slug") ||
-      form.getValues("slug") ===
-        selectedCategory?.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)/g, "")
-    ) {
-      const slug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-      form.setValue("slug", slug);
-    }
+  // Yeni kategori input alanına odaklan
+  const focusNewCategoryInput = () => {
+    setTimeout(() => {
+      if (newCategoryInputRef.current) {
+        newCategoryInputRef.current.focus();
+      }
+    }, 0);
   };
 
   // Loading state
@@ -201,10 +194,29 @@ export function CategoryManagement() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={handleAddClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          Yeni Kategori
+      {/* Yeni kategori ekleme alanı */}
+      <div className="flex rounded-lg border p-4">
+        <Input
+          ref={newCategoryInputRef}
+          value={newCategoryName}
+          onChange={(e) => setNewCategoryName(e.target.value)}
+          placeholder="Yeni kategori adını girin..."
+          className="mr-2"
+          onFocus={focusNewCategoryInput}
+        />
+        <Button
+          onClick={handleCreateCategory}
+          disabled={
+            !newCategoryName || newCategoryName.length < 2 || isCreating
+          }
+          className="min-w-24"
+        >
+          {isCreating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="mr-2 h-4 w-4" />
+          )}
+          Ekle
         </Button>
       </div>
 
@@ -242,74 +254,6 @@ export function CategoryManagement() {
         ))}
       </div>
 
-      {/* Create Category Modal */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Yeni Kategori Ekle</DialogTitle>
-          </DialogHeader>
-
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onCreateSubmit)}
-              className="space-y-4"
-            >
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Kategori Adı</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        onChange={(e) => handleNameChange(e)}
-                        autoComplete="off"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Slug</FormLabel>
-                    <FormControl>
-                      <Input {...field} autoComplete="off" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCreateModalOpen(false)}
-                >
-                  İptal
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="gap-1"
-                >
-                  {createMutation.isPending && (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  )}
-                  Kategoriyi Ekle
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
       {/* Edit Category Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
@@ -329,30 +273,16 @@ export function CategoryManagement() {
                   <FormItem>
                     <FormLabel>Kategori Adı</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        onChange={(e) => handleNameChange(e)}
-                        autoComplete="off"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Slug</FormLabel>
-                    <FormControl>
                       <Input {...field} autoComplete="off" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              <p className="text-sm text-muted-foreground">
+                Slug otomatik olarak kategori adından oluşturulacaktır.
+              </p>
 
               <DialogFooter>
                 <Button

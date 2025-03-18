@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 interface Post {
   id: string;
   title: string;
+  slug: string;
   content?: string;
   author: {
     name: string | null;
@@ -95,7 +96,7 @@ export function PostCard({
           {showAdminControls && (
             <div className="flex flex-col gap-1 rounded-lg border bg-background/80 p-1 backdrop-blur-sm">
               <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                <Link href={`/blog/${post.id}`} target="_blank">
+                <Link href={`/blog/${post.slug}`} target="_blank">
                   <Eye className="h-4 w-4" />
                   <span className="sr-only">Görüntüle</span>
                 </Link>
@@ -220,7 +221,7 @@ export function PostCard({
       </div>
 
       {/* Title */}
-      <h3 className="mb-2 mt-3 text-xl font-semibold group-hover:text-primary">
+      <h3 className="mb-2 mt-6 text-xl font-semibold group-hover:text-primary">
         {post.title}
       </h3>
 
@@ -255,7 +256,7 @@ export function PostCard({
       {showAdminControls && (
         <div className="absolute right-2 top-2 flex flex-col gap-1 rounded-lg border bg-background/80 p-1 backdrop-blur-sm">
           <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-            <Link href={`/blog/${post.id}`} target="_blank">
+            <Link href={`/blog/${post.slug}`} target="_blank">
               <Eye className="h-4 w-4" />
               <span className="sr-only">Görüntüle</span>
             </Link>
@@ -280,7 +281,7 @@ export function PostCard({
         </div>
       )}
 
-      <Link href={`/blog/${post.id}`} className="absolute inset-0">
+      <Link href={`/blog/${post.slug}`} className="absolute inset-0">
         <span className="sr-only">Yazıyı Oku</span>
       </Link>
     </article>

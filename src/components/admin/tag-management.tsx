@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { api } from "@/trpc/react";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { z } from "zod";
@@ -33,9 +33,6 @@ const tagSchema = z.object({
   name: z.string().min(2, {
     message: "Etiket adı en az 2 karakter olmalıdır",
   }),
-  slug: z.string().min(2, {
-    message: "Slug en az 2 karakter olmalıdır",
-  }),
 });
 
 type TagFormValues = z.infer<typeof tagSchema>;
@@ -46,23 +43,32 @@ type TagData = {
   slug: string;
 };
 
+// Tag router zaten slug oluşturduğu için, bu fonksiyon sadece tahmini bir gösterim sağlar
+function createSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 export function TagManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTag, setSelectedTag] = useState<TagData | null>(null);
+  const newTagInputRef = useRef<HTMLInputElement>(null);
+  const [newTagName, setNewTagName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   // Get all tags
   const { data: tags, isLoading } = api.tag.getAll.useQuery(undefined, {
     staleTime: 10000,
   });
 
-  // Create form for adding/editing tag
+  // Create form for editing tag
   const form = useForm<TagFormValues>({
     resolver: zodResolver(tagSchema),
     defaultValues: {
       name: "",
-      slug: "",
     },
   });
 
@@ -71,19 +77,8 @@ export function TagManagement() {
     setSelectedTag(tag);
     form.reset({
       name: tag.name,
-      slug: tag.slug,
     });
     setIsEditModalOpen(true);
-  };
-
-  // Handle add button click
-  const handleAddClick = () => {
-    setSelectedTag(null);
-    form.reset({
-      name: "",
-      slug: "",
-    });
-    setIsCreateModalOpen(true);
   };
 
   // Handle delete button click
@@ -99,10 +94,12 @@ export function TagManagement() {
   const createMutation = api.tag.create.useMutation({
     onSuccess: () => {
       toast.success("Etiket başarıyla oluşturuldu");
-      setIsCreateModalOpen(false);
+      setNewTagName("");
+      setIsCreating(false);
       void utils.tag.getAll.invalidate();
     },
     onError: (error) => {
+      setIsCreating(false);
       toast.error(`Hata: ${error.message}`);
     },
   });
@@ -131,9 +128,17 @@ export function TagManagement() {
     },
   });
 
-  // Form submission function (create)
-  const onCreateSubmit = (values: TagFormValues) => {
-    createMutation.mutate(values);
+  // Basit etiket oluşturma
+  const handleCreateTag = () => {
+    if (!newTagName || newTagName.length < 2) {
+      toast.error("Etiket adı en az 2 karakter olmalıdır");
+      return;
+    }
+
+    setIsCreating(true);
+    createMutation.mutate({
+      name: newTagName,
+    });
   };
 
   // Form submission function (update)
@@ -141,7 +146,7 @@ export function TagManagement() {
     if (selectedTag) {
       updateMutation.mutate({
         id: selectedTag.id,
-        ...values,
+        name: values.name,
       });
     }
   };
@@ -153,26 +158,13 @@ export function TagManagement() {
     }
   };
 
-  // Handle slug generation
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    form.setValue("name", name);
-
-    // Only auto-generate slug if it's empty or matches the previous auto-generated slug
-    if (
-      !form.getValues("slug") ||
-      form.getValues("slug") ===
-        selectedTag?.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)/g, "")
-    ) {
-      const slug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-      form.setValue("slug", slug);
-    }
+  // Yeni etiket input alanına odaklan
+  const focusNewTagInput = () => {
+    setTimeout(() => {
+      if (newTagInputRef.current) {
+        newTagInputRef.current.focus();
+      }
+    }, 0);
   };
 
   // Loading state
@@ -194,10 +186,27 @@ export function TagManagement() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={handleAddClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          Yeni Etiket
+      {/* Yeni etiket ekleme alanı */}
+      <div className="flex rounded-lg border p-4">
+        <Input
+          ref={newTagInputRef}
+          value={newTagName}
+          onChange={(e) => setNewTagName(e.target.value)}
+          placeholder="Yeni etiket adını girin..."
+          className="mr-2"
+          onFocus={focusNewTagInput}
+        />
+        <Button
+          onClick={handleCreateTag}
+          disabled={!newTagName || newTagName.length < 2 || isCreating}
+          className="min-w-24"
+        >
+          {isCreating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="mr-2 h-4 w-4" />
+          )}
+          Ekle
         </Button>
       </div>
 
@@ -235,74 +244,6 @@ export function TagManagement() {
         ))}
       </div>
 
-      {/* Create Tag Modal */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Yeni Etiket Ekle</DialogTitle>
-          </DialogHeader>
-
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onCreateSubmit)}
-              className="space-y-4"
-            >
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Etiket Adı</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        onChange={(e) => handleNameChange(e)}
-                        autoComplete="off"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Slug</FormLabel>
-                    <FormControl>
-                      <Input {...field} autoComplete="off" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCreateModalOpen(false)}
-                >
-                  İptal
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="gap-1"
-                >
-                  {createMutation.isPending && (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  )}
-                  Etiketi Ekle
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
       {/* Edit Tag Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
@@ -322,30 +263,16 @@ export function TagManagement() {
                   <FormItem>
                     <FormLabel>Etiket Adı</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        onChange={(e) => handleNameChange(e)}
-                        autoComplete="off"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Slug</FormLabel>
-                    <FormControl>
                       <Input {...field} autoComplete="off" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              <p className="text-sm text-muted-foreground">
+                Slug otomatik olarak etiket adından oluşturulacaktır.
+              </p>
 
               <DialogFooter>
                 <Button
@@ -376,7 +303,7 @@ export function TagManagement() {
         open={isDeleteModalOpen}
         onOpenChange={setIsDeleteModalOpen}
         title="Etiketi Sil"
-        description={`"${selectedTag?.name}" etiketini silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve bu etikete bağlı yazıların bağlantısı kaldırılacaktır.`}
+        description={`"${selectedTag?.name}" etiketini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
         confirmText="Sil"
         cancelText="İptal"
         onConfirm={handleConfirmDelete}

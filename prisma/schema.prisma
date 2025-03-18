@@ -39,6 +39,7 @@ model Tag {
 model BlogPost {
     id          String    @id @default(cuid())
     title       String
+    slug        String    @unique
     content     String    @db.Text
     published   Boolean   @default(false)
     createdAt   DateTime  @default(now())
@@ -50,6 +51,7 @@ model BlogPost {
     tags        Tag[]
 
     @@index([title])
+    @@index([slug])
 }
 
 // Necessary for Next auth
