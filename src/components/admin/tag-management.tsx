@@ -1,40 +1,107 @@
 "use client";
 
 import { useState } from "react";
-import { Edit, Plus, Trash2 } from "lucide-react";
+import { api } from "@/trpc/react";
+import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
-import { api } from "@/trpc/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+
+// Form schema for tag
+const tagSchema = z.object({
+  name: z.string().min(2, {
+    message: "Etiket adı en az 2 karakter olmalıdır",
+  }),
+  slug: z.string().min(2, {
+    message: "Slug en az 2 karakter olmalıdır",
+  }),
+});
+
+type TagFormValues = z.infer<typeof tagSchema>;
 
 export function TagManagement() {
-  const [newTagName, setNewTagName] = useState("");
-  const [editTagId, setEditTagId] = useState<string | null>(null);
-  const [editTagName, setEditTagName] = useState("");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [tagToDelete, setTagToDelete] = useState<{
+  const [selectedTag, setSelectedTag] = useState<{
     id: string;
     name: string;
+    slug: string;
   } | null>(null);
 
-  const { data: tags, isLoading } = api.tag.getAll.useQuery();
+  // Get all tags
+  const { data: tags, isLoading } = api.tag.getAll.useQuery(undefined, {
+    staleTime: 10000,
+  });
+
+  // Create form for adding/editing tag
+  const form = useForm<TagFormValues>({
+    resolver: zodResolver(tagSchema),
+    defaultValues: {
+      name: "",
+      slug: "",
+    },
+  });
+
+  // Handle edit button click
+  const handleEditClick = (tag: { id: string; name: string; slug: string }) => {
+    setSelectedTag(tag);
+    form.reset({
+      name: tag.name,
+      slug: tag.slug,
+    });
+    setIsEditModalOpen(true);
+  };
+
+  // Handle add button click
+  const handleAddClick = () => {
+    setSelectedTag(null);
+    form.reset({
+      name: "",
+      slug: "",
+    });
+    setIsCreateModalOpen(true);
+  };
+
+  // Handle delete button click
+  const handleDeleteClick = (tag: {
+    id: string;
+    name: string;
+    slug: string;
+  }) => {
+    setSelectedTag(tag);
+    setIsDeleteModalOpen(true);
+  };
+
+  // TRPC utils
   const utils = api.useUtils();
 
   // Create tag mutation
-  const createTagMutation = api.tag.create.useMutation({
+  const createMutation = api.tag.create.useMutation({
     onSuccess: () => {
       toast.success("Etiket başarıyla oluşturuldu");
-      setNewTagName("");
+      setIsCreateModalOpen(false);
       void utils.tag.getAll.invalidate();
     },
     onError: (error) => {
@@ -43,11 +110,10 @@ export function TagManagement() {
   });
 
   // Update tag mutation
-  const updateTagMutation = api.tag.update.useMutation({
+  const updateMutation = api.tag.update.useMutation({
     onSuccess: () => {
       toast.success("Etiket başarıyla güncellendi");
-      setEditTagId(null);
-      setEditTagName("");
+      setIsEditModalOpen(false);
       void utils.tag.getAll.invalidate();
     },
     onError: (error) => {
@@ -56,10 +122,9 @@ export function TagManagement() {
   });
 
   // Delete tag mutation
-  const deleteTagMutation = api.tag.delete.useMutation({
+  const deleteMutation = api.tag.delete.useMutation({
     onSuccess: () => {
       toast.success("Etiket başarıyla silindi");
-      setTagToDelete(null);
       setIsDeleteModalOpen(false);
       void utils.tag.getAll.invalidate();
     },
@@ -68,171 +133,257 @@ export function TagManagement() {
     },
   });
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newTagName.trim()) {
-      createTagMutation.mutate({ name: newTagName });
-    } else {
-      toast.error("Etiket adı gereklidir");
+  // Form submission function (create)
+  const onCreateSubmit = (values: TagFormValues) => {
+    createMutation.mutate(values);
+  };
+
+  // Form submission function (update)
+  const onUpdateSubmit = (values: TagFormValues) => {
+    if (selectedTag) {
+      updateMutation.mutate({
+        id: selectedTag.id,
+        ...values,
+      });
     }
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editTagId && editTagName.trim()) {
-      updateTagMutation.mutate({ id: editTagId, name: editTagName });
-    } else {
-      toast.error("Etiket adı gereklidir");
+  // Delete confirmation
+  const handleConfirmDelete = () => {
+    if (selectedTag) {
+      deleteMutation.mutate({ id: selectedTag.id });
     }
   };
 
-  const handleDeleteClick = (id: string, name: string) => {
-    setTagToDelete({ id, name });
-    setIsDeleteModalOpen(true);
-  };
+  // Handle slug generation
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.value;
+    form.setValue("name", name);
 
-  const confirmDelete = () => {
-    if (tagToDelete) {
-      deleteTagMutation.mutate({ id: tagToDelete.id });
+    // Only auto-generate slug if it's empty or matches the previous auto-generated slug
+    if (
+      !form.getValues("slug") ||
+      form.getValues("slug") ===
+        selectedTag?.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "")
+    ) {
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+      form.setValue("slug", slug);
     }
   };
 
-  const startEdit = (id: string, name: string) => {
-    setEditTagId(id);
-    setEditTagName(name);
-  };
-
-  const cancelEdit = () => {
-    setEditTagId(null);
-    setEditTagName("");
-  };
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-32" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-lg border p-4">
+              <Skeleton className="mb-2 h-6 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Etiket Yönetimi</CardTitle>
-        <CardDescription>
-          Blogunuz için etiketleri ekleyin, düzenleyin veya silin
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          <form onSubmit={handleCreateSubmit} className="flex items-end gap-2">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="newTag">Yeni Etiket</Label>
-              <Input
-                id="newTag"
-                value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                placeholder="Etiket adı girin"
-                disabled={createTagMutation.isPending}
-              />
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={handleAddClick}>
+          <Plus className="mr-2 h-4 w-4" />
+          Yeni Etiket
+        </Button>
+      </div>
+
+      {/* Tags grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {tags?.map((tag) => (
+          <div
+            key={tag.id}
+            className="flex flex-col rounded-lg border p-4 shadow-sm"
+          >
+            <div className="mb-2">
+              <h3 className="text-xl font-semibold">{tag.name}</h3>
+              <p className="text-sm text-muted-foreground">/{tag.slug}</p>
             </div>
-            <Button
-              type="submit"
-              size="sm"
-              className="mb-px"
-              disabled={createTagMutation.isPending}
-            >
-              {createTagMutation.isPending ? (
-                "Ekleniyor..."
-              ) : (
-                <>
-                  <Plus className="mr-1 h-4 w-4" />
-                  Ekle
-                </>
-              )}
-            </Button>
-          </form>
 
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Mevcut Etiketler</h3>
-            {isLoading ? (
-              <p className="text-sm text-muted-foreground">Yükleniyor...</p>
-            ) : !tags || tags.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Henüz etiket yok</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
-                {tags.map((tag) => (
-                  <div key={tag.id} className="rounded-md border p-3">
-                    {editTagId === tag.id ? (
-                      <form onSubmit={handleEditSubmit} className="space-y-2">
-                        <Input
-                          value={editTagName}
-                          onChange={(e) => setEditTagName(e.target.value)}
-                          placeholder="Etiket adı girin"
-                          className="w-full"
-                          disabled={updateTagMutation.isPending}
-                        />
-                        <div className="flex gap-1">
-                          <Button
-                            type="submit"
-                            size="sm"
-                            className="w-full"
-                            disabled={updateTagMutation.isPending}
-                          >
-                            {updateTagMutation.isPending ? "..." : "Kaydet"}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            onClick={cancelEdit}
-                            disabled={updateTagMutation.isPending}
-                          >
-                            İptal
-                          </Button>
-                        </div>
-                      </form>
-                    ) : (
-                      <div>
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="font-medium">{tag.name}</span>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => startEdit(tag.id, tag.name)}
-                            >
-                              <Edit className="h-3 w-3" />
-                              <span className="sr-only">Düzenle</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleDeleteClick(tag.id, tag.name)
-                              }
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              <span className="sr-only">Sil</span>
-                            </Button>
-                          </div>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {tag.slug}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="mt-auto flex items-center justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEditClick(tag)}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Düzenle
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDeleteClick(tag)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Sil
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardContent>
+        ))}
+      </div>
 
+      {/* Create Tag Modal */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Yeni Etiket Ekle</DialogTitle>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onCreateSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Etiket Adı</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        onChange={(e) => handleNameChange(e)}
+                        autoComplete="off"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input {...field} autoComplete="off" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateModalOpen(false)}
+                >
+                  İptal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                  className="gap-1"
+                >
+                  {createMutation.isPending && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  Etiketi Ekle
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Tag Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Etiket Düzenle</DialogTitle>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onUpdateSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Etiket Adı</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        onChange={(e) => handleNameChange(e)}
+                        autoComplete="off"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input {...field} autoComplete="off" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  İptal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateMutation.isPending}
+                  className="gap-1"
+                >
+                  {updateMutation.isPending && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  Değişiklikleri Kaydet
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={isDeleteModalOpen}
         onOpenChange={setIsDeleteModalOpen}
         title="Etiketi Sil"
-        description={`"${tagToDelete?.name}" etiketini silmek istediğinize emin misiniz? Bu etiket tüm yazılardan kaldırılacaktır.`}
+        description={`"${selectedTag?.name}" etiketini silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve bu etikete bağlı yazıların bağlantısı kaldırılacaktır.`}
         confirmText="Sil"
         cancelText="İptal"
-        onConfirm={confirmDelete}
-        isLoading={deleteTagMutation.isPending}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteMutation.isPending}
       />
-    </Card>
+    </div>
   );
 }
