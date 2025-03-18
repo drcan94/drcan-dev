@@ -80,12 +80,10 @@ export const authConfig = {
 
       // Initial sign in
       if (account && user) {
-        // If the email is our admin email, set isAdmin to true
-        const isAdmin = user.email === "drcan94@gmail.com";
 
         return {
           ...token,
-          isAdmin,
+          isAdmin: user.isAdmin!!,
           id: user.id,
         };
       }
