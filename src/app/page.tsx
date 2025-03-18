@@ -18,7 +18,7 @@ export default function Home() {
         <div className="flex flex-col gap-8 md:flex-row md:items-center md:gap-12">
           <div className="flex-1 space-y-6">
             <div className="flex items-center gap-4">
-              {/* Profile image - smaller on mobile, next to name */}
+              {/* Profil fotoğrafı - mobilde küçük, isimle yan yana */}
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-primary/10 shadow-md md:hidden">
                 <Image
                   src="/me.jpg"
@@ -57,7 +57,7 @@ export default function Home() {
               </Button>
             </div>
           </div>
-          {/* Desktop image */}
+          {/* Masaüstü için fotoğraf */}
           <div className="hidden flex-1 md:flex md:justify-end">
             <div className="relative h-64 w-64 overflow-hidden rounded-full border-4 border-primary/10 shadow-xl">
               <Image
@@ -73,7 +73,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Recent Posts */}
+      {/* Son Yazılar */}
       <section className="mb-16">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-3xl font-bold">Son Yazılar</h2>
@@ -84,28 +84,27 @@ export default function Home() {
             </Link>
           </Button>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {isPending ? (
-            <div className="flex h-full items-center justify-center">
-              <Loader2 className="h-10 w-10 animate-spin" />
-            </div>
-          ) : (
-            posts
-              ?.slice(0, 6)
-              .map((post) => <PostCard key={post.id} post={post} />)
-          )}
-        </div>
-        {!posts?.length && (
+        {isPending ? (
+          <div className="my-10 flex items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin" />
+          </div>
+        ) : !posts?.length ? (
           <div className="rounded-lg border border-dashed p-12 text-center">
             <h3 className="mb-2 text-lg font-medium">Henüz yazı bulunamadı</h3>
             <p className="mb-6 text-muted-foreground">
               Yakında yeni yazılar eklenecektir.
             </p>
           </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {posts.slice(0, 6).map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
         )}
       </section>
 
-      {/* Features */}
+      {/* İlgi Alanlarım */}
       <section className="mb-16">
         <h2 className="mb-6 text-3xl font-bold">İlgi Alanlarım</h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
