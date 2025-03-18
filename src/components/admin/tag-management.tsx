@@ -40,15 +40,17 @@ const tagSchema = z.object({
 
 type TagFormValues = z.infer<typeof tagSchema>;
 
+type TagData = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 export function TagManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedTag, setSelectedTag] = useState<{
-    id: string;
-    name: string;
-    slug: string;
-  } | null>(null);
+  const [selectedTag, setSelectedTag] = useState<TagData | null>(null);
 
   // Get all tags
   const { data: tags, isLoading } = api.tag.getAll.useQuery(undefined, {
@@ -65,7 +67,7 @@ export function TagManagement() {
   });
 
   // Handle edit button click
-  const handleEditClick = (tag: { id: string; name: string; slug: string }) => {
+  const handleEditClick = (tag: TagData) => {
     setSelectedTag(tag);
     form.reset({
       name: tag.name,
@@ -85,11 +87,7 @@ export function TagManagement() {
   };
 
   // Handle delete button click
-  const handleDeleteClick = (tag: {
-    id: string;
-    name: string;
-    slug: string;
-  }) => {
+  const handleDeleteClick = (tag: TagData) => {
     setSelectedTag(tag);
     setIsDeleteModalOpen(true);
   };

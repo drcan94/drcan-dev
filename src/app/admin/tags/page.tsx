@@ -1,7 +1,3 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { Suspense } from "react";
 import { type Metadata } from "next";
 import { AdminTagsPage } from "./_components/admin-tags-page";
@@ -36,18 +32,6 @@ function LoadingFallback() {
 }
 
 export default function Page() {
-  const router = useRouter();
-  const { data: session } = useSession({
-    required: true,
-    onUnauthenticated() {
-      router.push("/");
-    },
-  });
-
-  if (!session?.user.isAdmin) {
-    return null;
-  }
-
   return (
     <Suspense fallback={<LoadingFallback />}>
       <AdminTagsPage />

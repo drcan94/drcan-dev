@@ -1,5 +1,3 @@
-"use client";
-
 import { Suspense } from "react";
 import { type Metadata } from "next";
 import { AdminCategoriesPage } from "./_components/admin-categories-page";

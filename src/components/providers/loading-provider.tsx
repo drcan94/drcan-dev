@@ -1,7 +1,13 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  Suspense,
+} from "react";
 import { LoadingIndicator } from "@/components/loading-indicator";
 
 interface LoadingContextType {
@@ -11,7 +17,8 @@ interface LoadingContextType {
 
 const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
 
-export function LoadingProvider({ children }: { children: React.ReactNode }) {
+// Create a client component that uses the hooks
+function LoadingProviderClient({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isChanging, setIsChanging] = useState(false);
   const pathname = usePathname();
@@ -52,6 +59,15 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
       {isLoading && <LoadingIndicator />}
       {children}
     </LoadingContext.Provider>
+  );
+}
+
+// Export a wrapper component that includes Suspense
+export function LoadingProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={children}>
+      <LoadingProviderClient>{children}</LoadingProviderClient>
+    </Suspense>
   );
 }
 

@@ -47,23 +47,38 @@ export function AdminTagsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-12">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Etiketler</h1>
-          <p className="text-muted-foreground">
-            Blog yazıları için etiketleri yönetin
-          </p>
+    <Suspense
+      fallback={
+        <div className="container mx-auto max-w-5xl px-4 py-12">
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="mt-2 h-4 w-48" />
+            </div>
+            <Skeleton className="h-10 w-40" />
+          </div>
+          <Skeleton className="h-[500px] w-full" />
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/admin" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Yönetim Paneline Dön
-          </Link>
-        </Button>
-      </div>
+      }
+    >
+      <div className="container mx-auto max-w-5xl px-4 py-12">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Etiketler</h1>
+            <p className="text-muted-foreground">
+              Blog yazıları için etiketleri yönetin
+            </p>
+          </div>
+          <Button variant="outline" asChild>
+            <Link href="/admin" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Yönetim Paneline Dön
+            </Link>
+          </Button>
+        </div>
 
-      <TagManagementWithSuspense />
-    </div>
+        <TagManagementWithSuspense />
+      </div>
+    </Suspense>
   );
 }

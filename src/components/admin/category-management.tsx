@@ -42,15 +42,19 @@ const categorySchema = z.object({
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
 
+type CategoryData = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 export function CategoryManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<{
-    id: string;
-    name: string;
-    slug: string;
-  } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryData | null>(
+    null,
+  );
 
   // Get all categories
   const { data: categories, isLoading } = api.category.getAll.useQuery(
@@ -69,20 +73,8 @@ export function CategoryManagement() {
     },
   });
 
-  // Reset form
-  const resetForm = () => {
-    form.reset({
-      name: selectedCategory?.name || "",
-      slug: selectedCategory?.slug || "",
-    });
-  };
-
   // Handle edit button click
-  const handleEditClick = (category: {
-    id: string;
-    name: string;
-    slug: string;
-  }) => {
+  const handleEditClick = (category: CategoryData) => {
     setSelectedCategory(category);
     form.reset({
       name: category.name,
@@ -102,7 +94,7 @@ export function CategoryManagement() {
   };
 
   // Handle delete button click
-  const handleDeleteClick = (category: { id: string; name: string }) => {
+  const handleDeleteClick = (category: CategoryData) => {
     setSelectedCategory(category);
     setIsDeleteModalOpen(true);
   };
