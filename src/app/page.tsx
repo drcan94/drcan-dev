@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Code, FileText, Stethoscope } from "lucide-react";
+import { ArrowRight, Code, FileText, Stethoscope, Loader2 } from "lucide-react";
 
 import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/blog/PostCard";
 
 export default function Home() {
-  const { data: posts } = api.blog.getAll.useQuery();
+  const { data: posts, isPending } = api.blog.getAll.useQuery();
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12 md:py-20">
@@ -85,9 +85,15 @@ export default function Home() {
           </Button>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {posts
-            ?.slice(0, 6)
-            .map((post) => <PostCard key={post.id} post={post} />)}
+          {isPending ? (
+            <div className="flex h-full items-center justify-center">
+              <Loader2 className="h-10 w-10 animate-spin" />
+            </div>
+          ) : (
+            posts
+              ?.slice(0, 6)
+              .map((post) => <PostCard key={post.id} post={post} />)
+          )}
         </div>
         {!posts?.length && (
           <div className="rounded-lg border border-dashed p-12 text-center">
