@@ -9,6 +9,7 @@ import { ThemeProvider } from "next-themes";
 import { TRPCReactProvider } from "@/trpc/react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
   title: {
@@ -41,7 +42,10 @@ export default function RootLayout({
               storageKey="drcan-dev-theme"
             >
               <Navbar />
-              <main className="flex-1">{children}</main>
+              <main className="flex-1">
+                {children}
+                <Analytics />
+              </main>
               <Footer />
               <Toaster position="bottom-right" />
             </ThemeProvider>
