@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { api } from "@/trpc/react";
-import { type PaginatedPosts } from "@/types";
+import { type PaginatedPostsOutput } from "@/types";
 import {
   Pagination,
   PaginationContent,
@@ -28,17 +28,79 @@ import { PostCard } from "@/components/blog/PostCard";
 
 const POSTS_PER_PAGE = 9;
 
+const FilterUI = ({
+  categories,
+  tags,
+  categoryParam,
+  tagParam,
+  handleCategoryChange,
+  handleTagChange,
+}: {
+  categories: any[] | undefined;
+  tags: any[] | undefined;
+  categoryParam: string | null;
+  tagParam: string | null;
+  handleCategoryChange: (value: string) => void;
+  handleTagChange: (value: string) => void;
+}) => (
+  <div className="flex flex-wrap items-center gap-4">
+    {/* Kategori filtresi */}
+    {categories && categories.length > 0 && (
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">Kategori:</span>
+        <Select
+          value={categoryParam ?? "all"}
+          onValueChange={handleCategoryChange}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Kategori Seçin" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tümü</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    )}
+
+    {/* Etiket filtresi */}
+    {tags && tags.length > 0 && (
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">Etiket:</span>
+        <Select value={tagParam ?? "all"} onValueChange={handleTagChange}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Etiket Seçin" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tümü</SelectItem>
+            {tags.map((tag) => (
+              <SelectItem key={tag.id} value={tag.id}>
+                {tag.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    )}
+  </div>
+);
+
 export function PaginatedPosts({
   initialData,
   showAdminControls = false,
 }: {
-  initialData?: PaginatedPosts;
+  initialData?: PaginatedPostsOutput;
   showAdminControls?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pageParam = searchParams?.get("sayfa");
   const categoryParam = searchParams?.get("kategori");
+  const tagParam = searchParams?.get("etiket");
   const currentPage = pageParam ? parseInt(pageParam) : 1;
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -50,12 +112,16 @@ export function PaginatedPosts({
   // Get categories for filter
   const { data: categories } = api.category.getAll.useQuery();
 
+  // Get tags for filter
+  const { data: tags } = api.tag.getAll.useQuery();
+
   // Get paginated posts
   const { data, isLoading } = api.blog.getPaginated.useQuery(
     {
       page: currentPage,
       limit: POSTS_PER_PAGE,
       categoryId: categoryParam ?? undefined,
+      tagId: tagParam ?? undefined,
     },
     {
       initialData,
@@ -102,6 +168,23 @@ export function PaginatedPosts({
       params.delete("kategori");
     } else {
       params.set("kategori", value);
+    }
+
+    // Navigate with the new params
+    router.push(`/blog?${params.toString()}`);
+  };
+
+  const handleTagChange = (value: string) => {
+    // Create new URLSearchParams
+    const params = new URLSearchParams(searchParams?.toString());
+
+    // Reset to page 1 when changing tag
+    params.set("sayfa", "1");
+
+    if (value === "all") {
+      params.delete("etiket");
+    } else {
+      params.set("etiket", value);
     }
 
     // Navigate with the new params
@@ -180,60 +263,72 @@ export function PaginatedPosts({
 
   if (isLoading) {
     return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: POSTS_PER_PAGE }).map((_, index) => (
-          <div
-            key={`skeleton-${index}`}
-            className="space-y-4 rounded-lg border p-6"
-          >
-            <Skeleton className="h-6 w-2/3" />
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-6 w-6 rounded-full" />
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-4 rounded-full" />
-              <Skeleton className="h-4 w-32" />
+      <div className="space-y-6">
+        <FilterUI
+          categories={categories}
+          tags={tags}
+          categoryParam={categoryParam}
+          tagParam={tagParam}
+          handleCategoryChange={handleCategoryChange}
+          handleTagChange={handleTagChange}
+        />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: POSTS_PER_PAGE }).map((_, index) => (
+            <div
+              key={`skeleton-${index}`}
+              className="space-y-4 rounded-lg border p-6"
+            >
+              <Skeleton className="h-6 w-2/3" />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-6 w-6 rounded-full" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-4 rounded-full" />
+                <Skeleton className="h-4 w-32" />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
 
   if (!data || data.posts.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-12 text-center">
-        <h3 className="mb-2 text-lg font-medium">Henüz yazı bulunamadı</h3>
-        <p className="text-muted-foreground">
-          Bu kategoride henüz yazı bulunmamaktadır veya yakında yeni yazılar
-          eklenecektir.
-        </p>
+      <div className="space-y-6">
+        <FilterUI
+          categories={categories}
+          tags={tags}
+          categoryParam={categoryParam}
+          tagParam={tagParam}
+          handleCategoryChange={handleCategoryChange}
+          handleTagChange={handleTagChange}
+        />
+        <div className="rounded-lg border border-dashed p-12 text-center">
+          <h3 className="mb-2 text-lg font-medium">Yazı bulunamadı</h3>
+          <p className="text-muted-foreground">
+            {categoryParam && tagParam
+              ? "Seçili kategori ve etiket kombinasyonunda yazı bulunmamaktadır."
+              : categoryParam
+                ? "Seçili kategoride yazı bulunmamaktadır."
+                : tagParam
+                  ? "Seçili etikette yazı bulunmamaktadır."
+                  : "Henüz yazı bulunmamaktadır veya yakında yeni yazılar eklenecektir."}
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {categories && categories.length > 0 && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Kategori:</span>
-          <Select
-            value={categoryParam ?? "all"}
-            onValueChange={handleCategoryChange}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Kategori Seçin" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tümü</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <FilterUI
+        categories={categories}
+        tags={tags}
+        categoryParam={categoryParam}
+        tagParam={tagParam}
+        handleCategoryChange={handleCategoryChange}
+        handleTagChange={handleTagChange}
+      />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {data.posts.map((post) => (
