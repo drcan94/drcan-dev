@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import { LoadingProvider } from "@/components/providers/loading-provider";
+import Script from "next/script";
 
 import { TRPCReactProvider } from "@/trpc/react";
 import { Navbar } from "@/components/navbar";
@@ -92,6 +93,14 @@ export default function RootLayout({
         className={`${GeistSans.variable} flex min-h-screen flex-col bg-background font-sans antialiased`}
         suppressHydrationWarning
       >
+        {/* Google AdSense */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4334852497351765"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
