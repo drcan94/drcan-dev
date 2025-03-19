@@ -69,14 +69,20 @@ export default function SearchResults({
     enabled: !initialTags,
   });
 
-  // Set isClient to true on component mount
+  // Set isClient to true on component mount and sync state with URL parameters
   useEffect(() => {
-    setIsClient(true);
+    if (!isClient) {
+      setIsClient(true);
+    }
+
+    // URL ile state senkronizasyonu
     setLocalQuery(query);
     setExactMatch(exactParam === "1");
+
+    // URL'deki kategori/etiket parametrelerini state ile senkronize et
     setSelectedCategory(categoryParam || "");
     setSelectedTag(tagParam || "");
-  }, [query, exactParam, categoryParam, tagParam]);
+  }, [query, exactParam, categoryParam, tagParam, isClient]);
 
   const { data, isLoading } = api.blog.search.useQuery(
     {
@@ -147,10 +153,42 @@ export default function SearchResults({
 
   // Tüm filtreleri temizle
   const clearAllFilters = () => {
+    // State'i temizle
     setLocalQuery("");
     setExactMatch(false);
     setSelectedCategory("");
     setSelectedTag("");
+
+    // Sayfayı filtresiz olarak yeniden yükle
+    window.location.href = `/blog/search`;
+  };
+
+  // Belirli bir filtreyi temizle
+  const clearSingleFilter = (type: "query" | "exact" | "category" | "tag") => {
+    const params = new URLSearchParams(searchParams?.toString() || "");
+
+    switch (type) {
+      case "query":
+        params.delete("q");
+        params.delete("exact");
+        break;
+      case "exact":
+        params.delete("exact");
+        break;
+      case "category":
+        params.delete("kategori");
+        break;
+      case "tag":
+        params.delete("etiket");
+        break;
+    }
+
+    // Eğer hiç parametre kalmadıysa, ana arama sayfasına yönlendir
+    const newUrl = params.toString()
+      ? `/blog/search?${params.toString()}`
+      : "/blog/search";
+
+    window.location.href = newUrl;
   };
 
   // Render a search form
@@ -256,25 +294,21 @@ export default function SearchResults({
           type="button"
           variant="outline"
           onClick={handleSearch}
-          disabled={
-            !selectedCategory && !selectedTag && !(localQuery.length >= 3)
-          }
+          className="min-w-[120px]"
         >
           Filtreleri Uygula
         </Button>
 
         {/* Filtreleri temizle butonu */}
-        {(selectedCategory || selectedTag || localQuery) && (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={clearAllFilters}
-            className="gap-1"
-          >
-            <FilterX className="h-4 w-4" />
-            Temizle
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={clearAllFilters}
+          className="gap-1"
+        >
+          <FilterX className="h-4 w-4" />
+          Temizle
+        </Button>
       </div>
     </div>
   );
@@ -286,34 +320,66 @@ export default function SearchResults({
     return (
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {query && (
-          <Badge variant="secondary" className="flex items-center gap-1">
+          <Badge
+            variant="secondary"
+            className="group flex cursor-pointer items-center gap-1"
+            onClick={() => clearSingleFilter("query")}
+          >
             <Search className="h-3 w-3" />
             <span>{query}</span>
+            <span className="ml-1 opacity-60 group-hover:opacity-100">×</span>
           </Badge>
         )}
 
         {exactMatch && query && (
-          <Badge variant="secondary" className="flex items-center gap-1">
+          <Badge
+            variant="secondary"
+            className="group flex cursor-pointer items-center gap-1"
+            onClick={() => clearSingleFilter("exact")}
+          >
             <ScanSearch className="h-3 w-3" />
             <span>Tam eşleşme</span>
+            <span className="ml-1 opacity-60 group-hover:opacity-100">×</span>
           </Badge>
         )}
 
         {categoryParam && categories && (
-          <Badge variant="secondary" className="flex items-center gap-1">
+          <Badge
+            variant="secondary"
+            className="group flex cursor-pointer items-center gap-1"
+            onClick={() => clearSingleFilter("category")}
+          >
             <Tag className="h-3 w-3" />
             <span>
               {categories.find((c) => c.id === categoryParam)?.name ||
                 "Kategori"}
             </span>
+            <span className="ml-1 opacity-60 group-hover:opacity-100">×</span>
           </Badge>
         )}
 
         {tagParam && tags && (
-          <Badge variant="secondary" className="flex items-center gap-1">
+          <Badge
+            variant="secondary"
+            className="group flex cursor-pointer items-center gap-1"
+            onClick={() => clearSingleFilter("tag")}
+          >
             <Tag className="h-3 w-3" />
             <span>{tags.find((t) => t.id === tagParam)?.name || "Etiket"}</span>
+            <span className="ml-1 opacity-60 group-hover:opacity-100">×</span>
           </Badge>
+        )}
+
+        {isFiltering && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearAllFilters}
+            className="h-7 gap-1 px-2"
+          >
+            <FilterX className="h-3 w-3" />
+            <span className="text-xs">Tümünü Temizle</span>
+          </Button>
         )}
       </div>
     );
