@@ -28,7 +28,6 @@ export function BlogSearch() {
     {
       enabled: shouldSearch,
       staleTime: 60000, // 60 saniye önbellek - performansı artırmak için
-      cacheTime: 300000, // 5 dakika cache
     },
   );
 
