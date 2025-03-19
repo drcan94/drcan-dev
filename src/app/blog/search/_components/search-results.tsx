@@ -14,6 +14,7 @@ import {
   FilterX,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
@@ -113,10 +114,12 @@ export default function SearchResults({
 
     // URL parametrelerini oluştur
     const params = new URLSearchParams();
+    let hasCriteria = false;
 
     // Arama sorgusu varsa ekle
     if (localQuery && localQuery.length >= 3) {
       params.set("q", localQuery);
+      hasCriteria = true;
     }
 
     // Tam eşleşme modunu ekle
@@ -127,13 +130,28 @@ export default function SearchResults({
     // Kategori ve etiket filtrelerini ekle
     if (selectedCategory) {
       params.set("kategori", selectedCategory);
+      hasCriteria = true;
     }
 
     if (selectedTag) {
       params.set("etiket", selectedTag);
+      hasCriteria = true;
     }
 
-    window.location.href = `/blog/search?${params.toString()}`;
+    // Hiçbir filtre seçilmediyse uyarı ver
+    if (!hasCriteria) {
+      toast.error("Lütfen bir arama terimi girin veya filtre seçin");
+      return;
+    }
+
+    // Yükleniyor bildirimi göster
+    const loadingToast = toast.loading("Arama sonuçları getiriliyor...");
+
+    // Yükleme hissi için kısa bir gecikme ekle
+    setTimeout(() => {
+      toast.dismiss(loadingToast);
+      window.location.href = `/blog/search?${params.toString()}`;
+    }, 600);
   };
 
   // Arama modunu değiştir
@@ -159,36 +177,59 @@ export default function SearchResults({
     setSelectedCategory("");
     setSelectedTag("");
 
+    // Yükleniyor bildirimi göster
+    const loadingToast = toast.loading("Filtreler temizleniyor...");
+
     // Sayfayı filtresiz olarak yeniden yükle
-    window.location.href = `/blog/search`;
+    setTimeout(() => {
+      toast.dismiss(loadingToast);
+      toast.success("Tüm filtreler temizlendi");
+      window.location.href = `/blog/search`;
+    }, 500);
   };
 
   // Belirli bir filtreyi temizle
   const clearSingleFilter = (type: "query" | "exact" | "category" | "tag") => {
     const params = new URLSearchParams(searchParams?.toString() || "");
+    let message = "";
 
     switch (type) {
       case "query":
         params.delete("q");
         params.delete("exact");
+        message = "Arama terimi kaldırıldı";
         break;
       case "exact":
         params.delete("exact");
+        message = "Tam eşleşme modu kapatıldı";
         break;
       case "category":
+        const categoryName =
+          categories?.find((c) => c.id === categoryParam)?.name || "Kategori";
         params.delete("kategori");
+        message = `"${categoryName}" filtresi kaldırıldı`;
         break;
       case "tag":
+        const tagName = tags?.find((t) => t.id === tagParam)?.name || "Etiket";
         params.delete("etiket");
+        message = `"${tagName}" filtresi kaldırıldı`;
         break;
     }
 
-    // Eğer hiç parametre kalmadıysa, ana arama sayfasına yönlendir
-    const newUrl = params.toString()
-      ? `/blog/search?${params.toString()}`
-      : "/blog/search";
+    // Yükleniyor bildirimi göster
+    const loadingToast = toast.loading("Filtre kaldırılıyor...");
 
-    window.location.href = newUrl;
+    // Eğer hiç parametre kalmadıysa, ana arama sayfasına yönlendir
+    setTimeout(() => {
+      toast.dismiss(loadingToast);
+      toast.success(message);
+
+      const newUrl = params.toString()
+        ? `/blog/search?${params.toString()}`
+        : "/blog/search";
+
+      window.location.href = newUrl;
+    }, 500);
   };
 
   // Render a search form

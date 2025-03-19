@@ -160,37 +160,85 @@ export function PaginatedPosts({
   };
 
   const handleCategoryChange = (value: string) => {
+    // Yükleniyor durumunu göster
+    const loadingToast = toast.loading("Kategori filtreleniyor...");
+
     // Create new URLSearchParams
     const params = new URLSearchParams(searchParams?.toString());
 
     // Reset to page 1 when changing category
     params.set("sayfa", "1");
 
+    // Kategori değişikliğini ayarla
+    let categoryName = "Tüm kategoriler";
     if (value === "all") {
       params.delete("kategori");
     } else {
       params.set("kategori", value);
+      // Seçilen kategorinin adını bul
+      const selectedCategory = categories?.find((c) => c.id === value);
+      if (selectedCategory) {
+        categoryName = selectedCategory.name;
+      }
     }
 
     // Arama sayfasına yönlendir
-    router.push(`/blog/search?${params.toString()}`);
+    setTimeout(() => {
+      // Bildirimi kapat
+      toast.dismiss(loadingToast);
+
+      // Başarılı bildirimi göster
+      if (value === "all") {
+        toast.success("Tüm kategoriler gösteriliyor");
+      } else {
+        toast.success(
+          `"${categoryName}" kategorisine ait sonuçlar gösteriliyor`,
+        );
+      }
+
+      // Sayfayı yönlendir
+      router.push(`/blog/search?${params.toString()}`);
+    }, 600); // Kısa bir gecikme ekleyerek yükleniyor hissini verelim
   };
 
   const handleTagChange = (value: string) => {
+    // Yükleniyor durumunu göster
+    const loadingToast = toast.loading("Etiket filtreleniyor...");
+
     // Create new URLSearchParams
     const params = new URLSearchParams(searchParams?.toString());
 
     // Reset to page 1 when changing tag
     params.set("sayfa", "1");
 
+    // Etiket değişikliğini ayarla
+    let tagName = "Tüm etiketler";
     if (value === "all") {
       params.delete("etiket");
     } else {
       params.set("etiket", value);
+      // Seçilen etiketin adını bul
+      const selectedTag = tags?.find((t) => t.id === value);
+      if (selectedTag) {
+        tagName = selectedTag.name;
+      }
     }
 
     // Arama sayfasına yönlendir
-    router.push(`/blog/search?${params.toString()}`);
+    setTimeout(() => {
+      // Bildirimi kapat
+      toast.dismiss(loadingToast);
+
+      // Başarılı bildirimi göster
+      if (value === "all") {
+        toast.success("Tüm etiketler gösteriliyor");
+      } else {
+        toast.success(`"${tagName}" etiketine ait sonuçlar gösteriliyor`);
+      }
+
+      // Sayfayı yönlendir
+      router.push(`/blog/search?${params.toString()}`);
+    }, 600); // Kısa bir gecikme ekleyerek yükleniyor hissini verelim
   };
 
   const renderPagination = () => {
