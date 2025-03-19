@@ -221,18 +221,26 @@ export const blogRouter = createTRPCRouter({
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(100).default(10),
         exact: z.boolean().optional(),
+        categoryId: z.string().optional(),
+        tagId: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { query, page, limit, exact } = input;
+      const { query, page, limit, exact, categoryId, tagId } = input;
 
       // Clean and prepare the search query - boşlukları temizle
       const originalQuery = query.trim().replace(/\s+/g, " ");
 
-      // If query is too short or only whitespace, return empty results
-      if (!originalQuery || originalQuery.length < 3) {
-        // En az 3 karakter gerekli
-        console.log("Search: Query too short, returning empty results");
+      // If query is too short or only whitespace, and no filters, return empty results
+      if (
+        (!originalQuery || originalQuery.length < 3) &&
+        !categoryId &&
+        !tagId
+      ) {
+        // En az 3 karakter gerekli veya herhangi bir filtre
+        console.log(
+          "Search: Query too short and no filters, returning empty results",
+        );
         return {
           posts: [],
           total: 0,
@@ -242,7 +250,9 @@ export const blogRouter = createTRPCRouter({
         };
       }
 
-      console.log(`Search: Processing query "${originalQuery}"`);
+      console.log(
+        `Search: Processing query "${originalQuery}" with filters: categoryId=${categoryId}, tagId=${tagId}`,
+      );
 
       // Türkçe karakterleri normalize et
       const normalizeText = (text: string) => {
@@ -382,14 +392,34 @@ export const blogRouter = createTRPCRouter({
         return score;
       };
 
-      // Sorgu modunu belirle: Tam eşleşme mi yoksa kelime bazlı mı?
-      let where: any;
+      const skip = (page - 1) * limit;
 
-      if (exact) {
-        // Tam eşleşme modu - Sadece tam ifadeyi ara
-        where = {
-          published: true,
-          OR: [
+      // Temel sorgu koşulları - published yazılar
+      const baseWhereCondition: Prisma.BlogPostWhereInput = {
+        published: true,
+      };
+
+      // Kategori filtresi
+      if (categoryId) {
+        baseWhereCondition.categoryId = categoryId;
+      }
+
+      // Etiket filtresi
+      if (tagId) {
+        baseWhereCondition.tags = {
+          some: { id: tagId },
+        };
+      }
+
+      // Arama sorgusu için where koşulu
+      let whereCondition: Prisma.BlogPostWhereInput = { ...baseWhereCondition };
+
+      // Arama sorgusu varsa sorgulama koşullarını ekle
+      if (originalQuery && originalQuery.length >= 3) {
+        // Tam eşleşme modunda, ekleme yap
+        if (exact) {
+          // Tam eşleşme modu - Sadece tam ifadeyi ara
+          const exactSearchConditions = [
             // Başlık tam eşleşme
             {
               title: {
@@ -404,113 +434,122 @@ export const blogRouter = createTRPCRouter({
                 mode: Prisma.QueryMode.insensitive,
               },
             },
-          ],
-        };
-      } else {
-        // Gelişmiş arama modu - tüm olası eşleşmeleri dene
-        const orderConditions = [
-          // Tam ifade araması - en yüksek öncelik
-          {
-            title: {
-              equals: originalQuery,
-              mode: Prisma.QueryMode.insensitive,
-            },
-          },
-          {
-            title: {
-              startsWith: originalQuery,
-              mode: Prisma.QueryMode.insensitive,
-            },
-          },
-          {
-            title: {
-              contains: originalQuery,
-              mode: Prisma.QueryMode.insensitive,
-            },
-          },
-          {
-            content: {
-              contains: originalQuery,
-              mode: Prisma.QueryMode.insensitive,
-            },
-          },
-        ];
+          ];
 
-        // Kelime bazlı arama - düşük öncelik
-        const termConditions = searchTerms.flatMap((term) => [
-          {
-            title: {
-              contains: term,
-              mode: Prisma.QueryMode.insensitive,
-            },
-          },
-          {
-            content: {
-              contains: term,
-              mode: Prisma.QueryMode.insensitive,
-            },
-          },
-        ]);
-
-        where = {
-          published: true,
-          OR: [...orderConditions, ...termConditions],
-        };
-      }
-
-      try {
-        // Find matching posts
-        const allMatchingPosts = await ctx.db.blogPost.findMany({
-          where,
-          include: {
-            category: true,
-            author: {
-              select: {
-                name: true,
-                image: true,
+          // Tam eşleşme modunda AND ile birleştir
+          whereCondition = {
+            AND: [baseWhereCondition, { OR: exactSearchConditions }],
+          };
+        } else {
+          // Gelişmiş arama modu - tüm olası eşleşmeleri dene
+          const orderConditions = [
+            // Tam ifade araması - en yüksek öncelik
+            {
+              title: {
+                equals: originalQuery,
+                mode: Prisma.QueryMode.insensitive,
               },
             },
-            tags: true,
-          },
-        });
+            {
+              title: {
+                startsWith: originalQuery,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+            {
+              title: {
+                contains: originalQuery,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+            {
+              content: {
+                contains: originalQuery,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          ];
 
-        // Calculate relevance score for each post
-        const scoredPosts = allMatchingPosts.map((post) => ({
-          post,
-          score: calculateRelevanceScore(post),
-        }));
+          // Kelime bazlı arama - düşük öncelik
+          const termConditions = searchTerms.flatMap((term) => [
+            {
+              title: {
+                contains: term,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+            {
+              content: {
+                contains: term,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          ]);
 
-        // Sort by relevance score (highest first)
-        scoredPosts.sort((a, b) => b.score - a.score);
+          const fuzzySearchConditions = [...orderConditions, ...termConditions];
 
-        // For exact mode, filter posts with sufficient relevance
-        const filteredPosts = exact
-          ? scoredPosts.filter((item) => item.score >= 50) // Tam eşleşme modunda min 50 puan şartı
-          : scoredPosts;
+          // Normal arama modunda AND ile birleştir
+          whereCondition = {
+            AND: [baseWhereCondition, { OR: fuzzySearchConditions }],
+          };
+        }
+      }
 
-        // Apply pagination
-        const totalCount = filteredPosts.length;
-        const paginatedPosts = filteredPosts
-          .slice((page - 1) * limit, page * limit)
-          .map((scored) => scored.post);
+      // Sıralama için ilgililik skoru hesapla - fuzzy search söz konusu ise
+      const hasSearchQuery = originalQuery && originalQuery.length >= 3;
 
-        console.log(
-          `Search: Query "${originalQuery}" returned ${paginatedPosts.length} posts (total: ${totalCount})`,
-        );
+      try {
+        // Ana sorgu
+        const [posts, total] = await Promise.all([
+          ctx.db.blogPost.findMany({
+            where: whereCondition,
+            include: {
+              author: {
+                select: {
+                  name: true,
+                  image: true,
+                },
+              },
+              category: true,
+              tags: true,
+            },
+            orderBy: hasSearchQuery
+              ? { createdAt: "desc" } // İlgililik skoru sıralama işlemi yap
+              : { createdAt: "desc" }, // Sadece filtre varsa tarihe göre sırala
+            skip,
+            take: limit,
+          }),
+          ctx.db.blogPost.count({ where: whereCondition }),
+        ]);
 
+        // ... devam eden kod ...
+
+        // Final results
+        const postsWithScores = hasSearchQuery
+          ? posts
+              .map((post) => {
+                const relevanceScore = calculateRelevanceScore(post);
+                return { ...post, relevanceScore };
+              })
+              .sort((a, b) => b.relevanceScore - a.relevanceScore)
+          : posts;
+
+        const totalPages = Math.ceil(total / limit);
+        const hasMore = page < totalPages;
+
+        // Format the results
         return {
-          posts: paginatedPosts,
-          total: totalCount,
-          totalPages: Math.ceil(totalCount / limit),
+          posts: postsWithScores,
+          total,
+          totalPages,
           page,
-          hasMore: page * limit < totalCount,
+          hasMore,
         };
       } catch (error) {
         console.error("Search error:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Search failed",
-          cause: error,
+          message: "Arama sırasında bir hata oluştu",
         });
       }
     }),

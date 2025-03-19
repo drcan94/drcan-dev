@@ -170,8 +170,8 @@ export function PaginatedPosts({
       params.set("kategori", value);
     }
 
-    // Navigate with the new params
-    router.push(`/blog?${params.toString()}`);
+    // Arama sayfasına yönlendir
+    router.push(`/blog/search?${params.toString()}`);
   };
 
   const handleTagChange = (value: string) => {
@@ -187,8 +187,8 @@ export function PaginatedPosts({
       params.set("etiket", value);
     }
 
-    // Navigate with the new params
-    router.push(`/blog?${params.toString()}`);
+    // Arama sayfasına yönlendir
+    router.push(`/blog/search?${params.toString()}`);
   };
 
   const renderPagination = () => {
@@ -218,6 +218,16 @@ export function PaginatedPosts({
     const createPageUrl = (page: number) => {
       const params = new URLSearchParams(searchParams?.toString());
       params.set("sayfa", page.toString());
+
+      // Sayfanın bulunduğu URL'yi kontrol et
+      const isSearchPage = window.location.pathname.includes("/blog/search");
+
+      // Arama sayfasında veya filtre varsa search sayfasına yönlendir
+      if (isSearchPage || categoryParam || tagParam) {
+        return `/blog/search?${params.toString()}`;
+      }
+
+      // Normal blog sayfasında sayfalam
       return `/blog?${params.toString()}`;
     };
 

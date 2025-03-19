@@ -1,9 +1,43 @@
 "use client";
 
 import { Suspense } from "react";
+import { api } from "@/trpc/server";
 import SearchResults from "./_components/search-results";
 
-export default function SearchPage() {
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const query = typeof searchParams.q === "string" ? searchParams.q : "";
+  const exact = searchParams.exact === "1";
+  const categoryId =
+    typeof searchParams.kategori === "string"
+      ? searchParams.kategori
+      : undefined;
+  const tagId =
+    typeof searchParams.etiket === "string" ? searchParams.etiket : undefined;
+
+  // Kategorileri ve etiketleri server tarafında yükle
+  const [categories, tags] = await Promise.all([
+    api.category.getAll(),
+    api.tag.getAll(),
+  ]);
+
+  // İlk arama sonuçlarını getir (eğer gerekli parametreler varsa)
+  let initialData = null;
+
+  if ((query && query.length >= 3) || categoryId || tagId) {
+    initialData = await api.blog.search({
+      query,
+      page: 1,
+      limit: 10,
+      exact,
+      categoryId,
+      tagId,
+    });
+  }
+
   return (
     <Suspense
       fallback={
@@ -26,7 +60,11 @@ export default function SearchPage() {
         </div>
       }
     >
-      <SearchResults />
+      <SearchResults
+        initialData={initialData}
+        initialCategories={categories}
+        initialTags={tags}
+      />
     </Suspense>
   );
 }
