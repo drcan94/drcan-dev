@@ -18,7 +18,7 @@ export function BlogSearch() {
   const debouncedSearch = useDebounce(searchQuery);
   // Minimum 3 karakter arama
   const shouldSearch = debouncedSearch.length >= 3;
-  
+
   // Tıklama olaylarını yönetmek için ref
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
@@ -41,13 +41,13 @@ export function BlogSearch() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        searchContainerRef.current && 
+        searchContainerRef.current &&
         !searchContainerRef.current.contains(event.target as Node)
       ) {
         setShowSuggestions(false);
       }
     };
-    
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -125,7 +125,7 @@ export function BlogSearch() {
               {data.posts.map((post) => (
                 <Link
                   key={post.id}
-                  href={`/blog/${post.id}`}
+                  href={`/blog/${post.slug}`}
                   className="block px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                   onClick={() => setShowSuggestions(false)}
                 >
