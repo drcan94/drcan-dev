@@ -2,7 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Filter, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Filter,
+  ChevronUp,
+  ChevronDown,
+  SearchX,
+  ArrowLeft,
+} from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 import { api } from "@/trpc/react";
 import { type PaginatedPostsOutput } from "@/types";
@@ -428,17 +436,29 @@ export function PaginatedPosts({
             handleTagChange={handleTagChange}
           />
         )}
-        <div className="rounded-lg border border-dashed p-12 text-center">
-          <h3 className="mb-2 text-lg font-medium">Yazı bulunamadı</h3>
-          <p className="text-muted-foreground">
-            {categoryParam && tagParam
-              ? "Seçili kategori ve etiket kombinasyonunda yazı bulunmamaktadır."
-              : categoryParam
-                ? "Seçili kategoride yazı bulunmamaktadır."
-                : tagParam
-                  ? "Seçili etikette yazı bulunmamaktadır."
-                  : "Henüz yazı bulunmamaktadır veya yakında yeni yazılar eklenecektir."}
+        <div className="mt-4 rounded-lg border border-dashed p-4 text-center sm:p-6 md:p-8">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50">
+            <SearchX className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h3 className="mb-1 text-lg font-medium">Sonuç Bulunamadı</h3>
+          <p className="mb-4 text-sm text-muted-foreground">
+            {categoryParam &&
+              categories &&
+              `"${categories.find((c) => c.id === categoryParam)?.name}" kategorisinde `}
+            {tagParam &&
+              tags &&
+              `"${tags.find((t) => t.id === tagParam)?.name}" etiketinde `}
+            herhangi bir içerik bulunamadı.
           </p>
+          <Button variant="outline" asChild size="sm">
+            <Link
+              href="/blog"
+              className="inline-flex items-center gap-1 text-sm"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Tüm Yazıları Görüntüle
+            </Link>
+          </Button>
         </div>
       </div>
     );
