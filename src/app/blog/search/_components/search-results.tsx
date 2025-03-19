@@ -80,7 +80,7 @@ export default function SearchResults({
 
   const { data, isLoading } = api.blog.search.useQuery(
     {
-      query,
+      query: query || "",
       page: 1,
       limit: 10,
       exact: exactMatch,
@@ -90,7 +90,7 @@ export default function SearchResults({
     {
       enabled:
         isClient &&
-        (query.length >= 3 || // Minimum 3 karakter kontrolü
+        ((query && query.length >= 3) || // Minimum 3 karakter kontrolü
           Boolean(categoryParam) || // Veya bir kategori seçilmiş
           Boolean(tagParam)), // Veya bir etiket seçilmiş
       staleTime: 60000, // 60 saniye önbellek - performans için

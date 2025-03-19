@@ -217,7 +217,7 @@ export const blogRouter = createTRPCRouter({
   search: publicProcedure
     .input(
       z.object({
-        query: z.string().min(1),
+        query: z.string().optional().default(""),
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(100).default(10),
         exact: z.boolean().optional(),
@@ -226,7 +226,7 @@ export const blogRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { query, page, limit, exact, categoryId, tagId } = input;
+      const { query = "", page, limit, exact, categoryId, tagId } = input;
 
       // Clean and prepare the search query - boşlukları temizle
       const originalQuery = query.trim().replace(/\s+/g, " ");

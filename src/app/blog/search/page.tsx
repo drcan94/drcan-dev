@@ -25,15 +25,20 @@ export default async function SearchPage({
   // İlk arama sonuçlarını getir (eğer gerekli parametreler varsa)
   let initialData = null;
 
-  if ((query && query.length >= 3) || categoryId || tagId) {
-    initialData = await api.blog.search({
-      query,
-      page: 1,
-      limit: 10,
-      exact,
-      categoryId,
-      tagId,
-    });
+  try {
+    if ((query && query.length >= 3) || categoryId || tagId) {
+      initialData = await api.blog.search({
+        query,
+        page: 1,
+        limit: 10,
+        exact,
+        categoryId,
+        tagId,
+      });
+    }
+  } catch (error) {
+    console.error("Arama sonuçları yüklenirken bir hata oluştu:", error);
+    // Hatayı yutsak da en azından logluyoruz ve UI'daki hata korumasına güveniyoruz
   }
 
   return (

@@ -43,7 +43,7 @@ export function BlogSearch() {
   // Arama önerileri için sorgu
   const { data, isFetching } = api.blog.search.useQuery(
     {
-      query: debouncedSearch,
+      query: debouncedSearch || "",
       page: 1,
       limit: 6,
       exact: exactMatch,
