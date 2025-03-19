@@ -1,5 +1,3 @@
-"use client";
-
 import { Suspense } from "react";
 import { api } from "@/trpc/server";
 import SearchResults from "./_components/search-results";
