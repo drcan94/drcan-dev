@@ -12,6 +12,9 @@ import {
   ScanSearch,
   Filter,
   FilterX,
+  ChevronDown,
+  ChevronUp,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -58,6 +61,29 @@ export default function SearchResults({
   const [exactMatch, setExactMatch] = useState(exactParam === "1");
   const [selectedCategory, setSelectedCategory] = useState(categoryParam || "");
   const [selectedTag, setSelectedTag] = useState(tagParam || "");
+
+  // Mobil ekran için filtre panelinin gösterilip gösterilmediğini kontrol et
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Ekran boyutunu kontrol et
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // İlk yükleme kontrolü
+    checkScreenSize();
+
+    // Ekran boyutu değiştiğinde kontrol et
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
+  // PC ekranda filtreleri her zaman açık tut, mobilde kapat
+  useEffect(() => {
+    setIsFilterPanelOpen(!isMobile);
+  }, [isMobile]);
 
   // Kategorileri ve etiketleri alma
   const { data: categories } = api.category.getAll.useQuery(undefined, {
@@ -234,123 +260,167 @@ export default function SearchResults({
 
   // Render a search form
   const renderSearchForm = () => (
-    <div className="mb-8 space-y-4">
-      <form onSubmit={handleSearch} className="mb-4 flex gap-2">
-        <div className="relative max-w-md grow">
-          <Input
-            type="search"
-            placeholder="Blog yazılarında ara..."
-            className="pr-10"
-            value={localQuery}
-            onChange={(e) => setLocalQuery(e.target.value)}
-            autoFocus={!query}
-          />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className={`h-8 w-8 ${exactMatch ? "text-primary" : "text-muted-foreground"}`}
-                    onClick={() => toggleSearchMode()}
-                  >
-                    {exactMatch ? (
-                      <ScanSearch className="h-4 w-4" />
-                    ) : (
-                      <Filter className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {exactMatch
-                      ? "Tam eşleşme modu açık"
-                      : "Tam eşleşme modu kapalı"}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+    <div className="mb-6">
+      {/* Ana arama formu ve filtre toggle butonu */}
+      <div className="mb-3 flex w-full flex-wrap gap-2">
+        <form onSubmit={handleSearch} className="flex flex-1 gap-1">
+          <div className="relative flex-1">
+            <Input
+              type="search"
+              placeholder="Blog yazılarında ara..."
+              className="pr-10"
+              value={localQuery}
+              onChange={(e) => setLocalQuery(e.target.value)}
+              autoFocus={!query}
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={`h-8 w-8 ${exactMatch ? "text-primary" : "text-muted-foreground"}`}
+                      onClick={() => toggleSearchMode()}
+                    >
+                      {exactMatch ? (
+                        <ScanSearch className="h-4 w-4" />
+                      ) : (
+                        <Filter className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {exactMatch
+                        ? "Tam eşleşme modu açık"
+                        : "Tam eşleşme modu kapalı"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
-        </div>
-        <Button
-          type="submit"
-          disabled={localQuery.length > 0 && localQuery.length < 3}
-        >
-          <Search className="mr-2 h-4 w-4" />
-          Ara
-        </Button>
-      </form>
+          <Button
+            type="submit"
+            disabled={localQuery.length > 0 && localQuery.length < 3}
+          >
+            <Search className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Ara</span>
+          </Button>
+        </form>
 
-      <div className="flex flex-wrap gap-4">
-        {/* Kategori filtresi */}
-        {categories && categories.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Kategori:</span>
-            <Select
-              value={selectedCategory || "all"}
-              onValueChange={handleCategoryChange}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Kategori Seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tümü</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* Etiket filtresi */}
-        {tags && tags.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Etiket:</span>
-            <Select
-              value={selectedTag || "all"}
-              onValueChange={handleTagChange}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Etiket Seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tümü</SelectItem>
-                {tags.map((tag) => (
-                  <SelectItem key={tag.id} value={tag.id}>
-                    {tag.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* Filtreleri uygula butonu */}
+        {/* Filtre düğmesi (mobile için) */}
         <Button
           type="button"
           variant="outline"
-          onClick={handleSearch}
-          className="min-w-[120px]"
+          className="flex items-center gap-1"
+          onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
         >
-          Filtreleri Uygula
-        </Button>
-
-        {/* Filtreleri temizle butonu */}
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={clearAllFilters}
-          className="gap-1"
-        >
-          <FilterX className="h-4 w-4" />
-          Temizle
+          <Filter className="h-4 w-4" />
+          <span>Filtreler</span>
+          {(selectedCategory || selectedTag) && (
+            <span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] leading-none text-primary-foreground">
+              {[selectedCategory, selectedTag].filter(Boolean).length}
+            </span>
+          )}
+          {isFilterPanelOpen ? (
+            <ChevronUp className="ml-1 h-3 w-3" />
+          ) : (
+            <ChevronDown className="ml-1 h-3 w-3" />
+          )}
         </Button>
       </div>
+
+      {/* Açılabilir Filtre Paneli */}
+      {isFilterPanelOpen && (
+        <div className="mb-4 rounded-lg border bg-card p-3 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-medium">Filtreleme Seçenekleri</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setIsFilterPanelOpen(false)}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Kapat</span>
+            </Button>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Kategori filtresi */}
+            {categories && categories.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Kategori</label>
+                <Select
+                  value={selectedCategory || "all"}
+                  onValueChange={handleCategoryChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Kategori Seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tümü</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Etiket filtresi */}
+            {tags && tags.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Etiket</label>
+                <Select
+                  value={selectedTag || "all"}
+                  onValueChange={handleTagChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Etiket Seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tümü</SelectItem>
+                    {tags.map((tag) => (
+                      <SelectItem key={tag.id} value={tag.id}>
+                        {tag.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {/* Filtreleri uygula butonu */}
+            <Button
+              type="button"
+              variant="default"
+              onClick={handleSearch}
+              className="flex-1"
+            >
+              Uygula
+            </Button>
+
+            {/* Filtreleri temizle butonu */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={clearAllFilters}
+              className="flex-1 gap-1"
+            >
+              <FilterX className="h-4 w-4" />
+              Temizle
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -359,7 +429,7 @@ export default function SearchResults({
     if (!isFiltering) return null;
 
     return (
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         {query && (
           <Badge
             variant="secondary"
@@ -426,7 +496,7 @@ export default function SearchResults({
     );
   };
 
-  // Arama terimi çok kısa ise
+  // Ana render fonksiyonları
   if (
     isClient &&
     query.length > 0 &&
@@ -435,13 +505,13 @@ export default function SearchResults({
     !tagParam
   ) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-16">
-        <div className="mb-8 space-y-4">
+      <div className="container mx-auto max-w-4xl px-4 py-6 md:py-12">
+        <div className="mb-4 space-y-3">
           <div className="flex items-center gap-2 text-primary">
-            <Search className="h-6 w-6" />
-            <h1 className="text-4xl font-bold">Arama Sonuçları</h1>
+            <Search className="h-5 w-5 md:h-6 md:w-6" />
+            <h1 className="text-2xl font-bold md:text-4xl">Arama Sonuçları</h1>
           </div>
-          <div className="rounded-lg border bg-amber-50 p-4 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          <div className="rounded-lg border bg-amber-50 p-3 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
             <p className="font-medium">
               Lütfen en az 3 karakter içeren bir arama terimi girin veya
               filtrelerden seçim yapın.
@@ -451,9 +521,9 @@ export default function SearchResults({
 
         {renderSearchForm()}
 
-        <Button variant="outline" asChild>
-          <Link href="/blog" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
+        <Button variant="outline" asChild size="sm" className="mt-2">
+          <Link href="/blog" className="flex items-center gap-1">
+            <ArrowLeft className="h-3 w-3" />
             Blog Yazılarına Dön
           </Link>
         </Button>
@@ -463,11 +533,11 @@ export default function SearchResults({
 
   if (!isClient) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-16">
-        <div className="mb-8 space-y-4">
+      <div className="container mx-auto max-w-4xl px-4 py-6 md:py-12">
+        <div className="mb-6 space-y-3">
           <div className="flex items-center gap-2 text-primary">
-            <Search className="h-6 w-6" />
-            <h1 className="text-4xl font-bold">Arama Sonuçları</h1>
+            <Search className="h-5 w-5 md:h-6 md:w-6" />
+            <h1 className="text-2xl font-bold md:text-4xl">Arama Sonuçları</h1>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -475,9 +545,9 @@ export default function SearchResults({
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="space-y-4 rounded-lg border p-6">
+            <div key={i} className="space-y-4 rounded-lg border p-4 md:p-6">
               <div className="h-6 w-2/3 animate-pulse rounded bg-muted" />
               <div className="flex items-center gap-2">
                 <div className="h-6 w-6 animate-pulse rounded-full bg-muted" />
@@ -494,30 +564,29 @@ export default function SearchResults({
 
   if (!isFiltering) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-16">
-        <div className="mb-8 space-y-4">
+      <div className="container mx-auto max-w-4xl px-4 py-6 md:py-12">
+        <div className="mb-4 space-y-3">
           <div className="flex items-center gap-2 text-primary">
-            <Search className="h-6 w-6" />
-            <h1 className="text-4xl font-bold">Arama</h1>
+            <Search className="h-5 w-5 md:h-6 md:w-6" />
+            <h1 className="text-2xl font-bold md:text-4xl">Arama</h1>
           </div>
           <p className="text-muted-foreground">
-            Blog yazılarında arama yapın veya kategoriye göre
-            filtreleyebilirsiniz
+            Blog yazılarında arama yapın veya filtreleyebilirsiniz
           </p>
         </div>
 
         {renderSearchForm()}
 
-        <div className="mt-12 rounded-lg border border-dashed p-8 text-center">
-          <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-40" />
-          <h2 className="mb-2 text-xl font-medium">Aramaya Başlayın</h2>
-          <p className="mb-6 text-muted-foreground">
-            Sağlık ve yazılım konularında blog yazılarında arama yapabilir veya
-            kategorileri kullanarak filtreleyebilirsiniz
+        <div className="mt-8 rounded-lg border border-dashed p-6 text-center">
+          <Search className="mx-auto mb-4 h-10 w-10 text-muted-foreground opacity-40" />
+          <h2 className="mb-2 text-lg font-medium">Aramaya Başlayın</h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Blog yazılarında arama yapabilir veya kategorileri kullanarak
+            filtreleyebilirsiniz
           </p>
-          <Button variant="outline" asChild>
-            <Link href="/blog" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
+          <Button variant="outline" asChild size="sm">
+            <Link href="/blog" className="flex items-center gap-1">
+              <ArrowLeft className="h-3 w-3" />
               Blog Yazılarına Dön
             </Link>
           </Button>
@@ -527,25 +596,25 @@ export default function SearchResults({
   }
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-16">
-      <div className="mb-8 space-y-4">
+    <div className="container mx-auto max-w-4xl px-4 py-6 md:py-12">
+      <div className="mb-4 space-y-3">
         <div className="flex items-center gap-2 text-primary">
-          <Search className="h-6 w-6" />
-          <h1 className="text-4xl font-bold">Arama Sonuçları</h1>
+          <Search className="h-5 w-5 md:h-6 md:w-6" />
+          <h1 className="text-2xl font-bold md:text-4xl">Arama Sonuçları</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {query ? (
-            <p className="text-lg text-muted-foreground">
+            <p className="text-base text-muted-foreground md:text-lg">
               <span className="font-medium text-foreground">"{query}"</span>{" "}
               için bulunan sonuçlar
             </p>
           ) : (
-            <p className="text-lg text-muted-foreground">
+            <p className="text-base text-muted-foreground md:text-lg">
               Filtrelenmiş sonuçlar
             </p>
           )}
           {!isLoading && data && data.total > 0 && (
-            <Badge variant="outline" className="ml-2">
+            <Badge variant="outline" className="ml-1">
               <span className="font-medium">{data.total} sonuç</span>
             </Badge>
           )}
@@ -556,18 +625,18 @@ export default function SearchResults({
 
       {renderSearchForm()}
 
-      <Button variant="outline" asChild className="mb-8">
-        <Link href="/blog" className="flex items-center gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Blog Yazılarına Dön
+      <Button variant="outline" asChild size="sm" className="mb-4">
+        <Link href="/blog" className="flex items-center gap-1">
+          <ArrowLeft className="h-3 w-3" />
+          Blog'a Dön
         </Link>
       </Button>
 
       {isLoading ? (
-        <div className="rounded-lg border p-8">
+        <div className="rounded-lg border p-6">
           <div className="flex items-center justify-center gap-2">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <p className="text-lg font-medium">Arama yapılıyor...</p>
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <p className="font-medium">Arama yapılıyor...</p>
           </div>
         </div>
       ) : data && data.posts.length > 0 ? (
@@ -579,10 +648,10 @@ export default function SearchResults({
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="rounded-lg border border-dashed p-12 text-center">
-            <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-40" />
+          <div className="rounded-lg border border-dashed p-6 text-center md:p-10">
+            <Search className="mx-auto mb-4 h-10 w-10 text-muted-foreground opacity-40" />
             <h3 className="mb-2 text-lg font-medium">Sonuç bulunamadı</h3>
-            <p className="mb-6 text-muted-foreground">
+            <p className="mb-4 text-sm text-muted-foreground">
               {query &&
                 `"${query}" araması için ${exactMatch ? "tam eşleşme modunda " : ""}`}
               {categoryParam &&
@@ -594,20 +663,20 @@ export default function SearchResults({
               hiçbir sonuç bulunamadı.
             </p>
 
-            <div className="mt-8 text-left">
-              <h4 className="mb-2 font-medium">Arama ipuçları:</h4>
-              <ul className="space-y-1 text-muted-foreground">
+            <div className="mt-6 text-left">
+              <h4 className="mb-2 text-sm font-medium">Arama ipuçları:</h4>
+              <ul className="space-y-1 text-xs text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <Tag className="h-4 w-4" />
+                  <Tag className="h-3 w-3" />
                   {exactMatch && query
                     ? "Tam eşleşme modunu kapatarak daha fazla sonuç bulabilirsiniz"
                     : "Daha genel filtreler kullanın"}
                 </li>
                 <li className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" /> Yazım hatalarını kontrol edin
+                  <Calendar className="h-3 w-3" /> Yazım hatalarını kontrol edin
                 </li>
                 <li className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> Farklı terimlerle tekrar deneyin
+                  <Clock className="h-3 w-3" /> Farklı terimlerle tekrar deneyin
                 </li>
               </ul>
             </div>

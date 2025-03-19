@@ -40,6 +40,23 @@ export function BlogSearch() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Mobil ekran için responsive davranış
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Ekran boyutunu kontrol et
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+
+    // İlk yükleme kontrolü
+    checkScreenSize();
+
+    // Ekran boyutu değiştiğinde kontrol et
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
   // Arama önerileri için sorgu
   const { data, isFetching } = api.blog.search.useQuery(
     {
@@ -207,20 +224,22 @@ export function BlogSearch() {
           }
         }}
       >
-        <div className="relative">
+        <div className="relative flex w-full items-center">
           <Input
             ref={inputRef}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Blog yazılarında ara..."
-            className="pl-9 pr-10"
+            placeholder={isMobile ? "Ara..." : "Blog yazılarında ara..."}
+            className="pl-8 pr-10"
             onFocus={() => {
               if (searchQuery.length >= 3) {
                 setShowSuggestions(true);
               }
             }}
           />
-          <BookOpen className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="absolute left-2.5 top-1/2 -translate-y-1/2">
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </div>
 
           <div className="absolute right-10 top-1/2 flex -translate-y-1/2 items-center">
             <TooltipProvider>
@@ -270,17 +289,19 @@ export function BlogSearch() {
           </Button>
         </div>
 
-        <div className="absolute right-20 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-          <kbd className="hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline-block">
-            Ctrl+K
-          </kbd>
-        </div>
+        {!isMobile && (
+          <div className="absolute right-10 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+            <kbd className="hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline-block">
+              Ctrl+K
+            </kbd>
+          </div>
+        )}
       </form>
 
       {/* Arama önerileri */}
       {showSuggestions && shouldSearch && (
         <div
-          className="absolute left-0 right-0 z-10 mt-1 max-h-[70vh] overflow-auto rounded-md border bg-background shadow-lg"
+          className="absolute left-0 right-0 z-10 mt-1 max-h-[60vh] overflow-auto rounded-md border bg-background shadow-lg"
           onClick={(e) => e.stopPropagation()}
         >
           {renderSuggestions()}

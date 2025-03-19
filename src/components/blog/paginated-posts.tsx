@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Filter, ChevronUp, ChevronDown } from "lucide-react";
 
 import { api } from "@/trpc/react";
 import { type PaginatedPostsOutput } from "@/types";
@@ -42,52 +43,112 @@ const FilterUI = ({
   tagParam: string | null;
   handleCategoryChange: (value: string) => void;
   handleTagChange: (value: string) => void;
-}) => (
-  <div className="flex flex-wrap items-center gap-4">
-    {/* Kategori filtresi */}
-    {categories && categories.length > 0 && (
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">Kategori:</span>
-        <Select
-          value={categoryParam ?? "all"}
-          onValueChange={handleCategoryChange}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Kategori Seçin" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tümü</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    )}
+}) => {
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-    {/* Etiket filtresi */}
-    {tags && tags.length > 0 && (
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">Etiket:</span>
-        <Select value={tagParam ?? "all"} onValueChange={handleTagChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Etiket Seçin" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tümü</SelectItem>
-            {tags.map((tag) => (
-              <SelectItem key={tag.id} value={tag.id}>
-                {tag.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    )}
-  </div>
-);
+  // Aktif filtre var mı kontrol et
+  const hasActiveFilters = categoryParam !== null || tagParam !== null;
+
+  // Mobil ekranda mıyız?
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Ekran boyutunu kontrol et
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // İlk yükleme kontrolü
+    checkScreenSize();
+
+    // Ekran boyutu değiştiğinde kontrol et
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
+  // PC ekranda filtreleri her zaman açık tut, mobilde kapat
+  useEffect(() => {
+    setIsFiltersOpen(!isMobile);
+  }, [isMobile]);
+
+  return (
+    <div className="mb-6 w-full rounded-lg border bg-card shadow-sm">
+      <button
+        onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+        className="flex w-full items-center justify-between p-3 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-primary" />
+          <span className="font-medium">Filtreler</span>
+          {hasActiveFilters && (
+            <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+              Aktif
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          {isFiltersOpen ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )}
+        </div>
+      </button>
+
+      {isFiltersOpen && (
+        <div className="border-t p-3">
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Kategori filtresi */}
+            {categories && categories.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Kategori</label>
+                <Select
+                  value={categoryParam ?? "all"}
+                  onValueChange={handleCategoryChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Kategori Seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tümü</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Etiket filtresi */}
+            {tags && tags.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Etiket</label>
+                <Select
+                  value={tagParam ?? "all"}
+                  onValueChange={handleTagChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Etiket Seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tümü</SelectItem>
+                    {tags.map((tag) => (
+                      <SelectItem key={tag.id} value={tag.id}>
+                        {tag.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export function PaginatedPosts({
   initialData,
