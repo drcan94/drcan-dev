@@ -2,31 +2,53 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Search, Clock, Tag, Calendar, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Search,
+  Clock,
+  Tag,
+  Calendar,
+  Loader2,
+  ScanSearch,
+  Filter,
+} from "lucide-react";
 import Link from "next/link";
 
 import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { PaginatedPosts } from "@/components/blog/paginated-posts";
 import { type PaginatedPosts as PaginatedPostsType } from "@/types";
-import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams?.get("q") || "";
+  const exactParam = searchParams?.get("exact");
   const [isClient, setIsClient] = useState(false);
   const [localQuery, setLocalQuery] = useState(query);
+  const [exactMatch, setExactMatch] = useState(exactParam === "1");
 
   // Set isClient to true on component mount
   useEffect(() => {
     setIsClient(true);
     setLocalQuery(query);
-  }, [query]);
+    setExactMatch(exactParam === "1");
+  }, [query, exactParam]);
 
   const { data, isLoading } = api.blog.search.useQuery(
-    { query, page: 1, limit: 10 },
+    {
+      query,
+      page: 1,
+      limit: 10,
+      exact: exactMatch,
+    },
     {
       enabled: isClient && query.length >= 3, // Minimum 3 karakter kontrolü
       staleTime: 60000, // 60 saniye önbellek - performans için
@@ -39,9 +61,65 @@ export default function SearchResults() {
     if (localQuery && localQuery.length >= 3) {
       const params = new URLSearchParams();
       params.set("q", localQuery);
+      if (exactMatch) {
+        params.set("exact", "1");
+      }
       window.location.href = `/blog/search?${params.toString()}`;
     }
   };
+
+  // Arama modunu değiştir
+  const toggleSearchMode = () => {
+    setExactMatch((prev) => !prev);
+  };
+
+  // Render a search form
+  const renderSearchForm = () => (
+    <form onSubmit={handleSearch} className="mb-8 flex gap-2">
+      <div className="relative max-w-md grow">
+        <Input
+          type="search"
+          placeholder="Blog yazılarında ara..."
+          className="pr-10"
+          value={localQuery}
+          onChange={(e) => setLocalQuery(e.target.value)}
+          autoFocus={!query}
+        />
+        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={`h-8 w-8 ${exactMatch ? "text-primary" : "text-muted-foreground"}`}
+                  onClick={() => toggleSearchMode()}
+                >
+                  {exactMatch ? (
+                    <ScanSearch className="h-4 w-4" />
+                  ) : (
+                    <Filter className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {exactMatch
+                    ? "Tam eşleşme modu açık"
+                    : "Tam eşleşme modu kapalı"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+      <Button type="submit" disabled={localQuery.length < 3}>
+        <Search className="mr-2 h-4 w-4" />
+        Ara
+      </Button>
+    </form>
+  );
 
   // Arama terimi çok kısa ise
   if (isClient && query.length > 0 && query.length < 3) {
@@ -59,19 +137,7 @@ export default function SearchResults() {
           </div>
         </div>
 
-        <form onSubmit={handleSearch} className="mb-8 flex gap-2">
-          <Input
-            type="search"
-            placeholder="Blog yazılarında ara..."
-            className="max-w-md"
-            value={localQuery}
-            onChange={(e) => setLocalQuery(e.target.value)}
-          />
-          <Button type="submit" disabled={localQuery.length < 3}>
-            <Search className="mr-2 h-4 w-4" />
-            Ara
-          </Button>
-        </form>
+        {renderSearchForm()}
 
         <Button variant="outline" asChild>
           <Link href="/blog" className="flex items-center gap-2">
@@ -125,20 +191,7 @@ export default function SearchResults() {
           <p className="text-muted-foreground">Blog yazılarında arama yapın</p>
         </div>
 
-        <form onSubmit={handleSearch} className="mb-8 flex gap-2">
-          <Input
-            type="search"
-            placeholder="Ne aramak istersiniz?"
-            className="max-w-md"
-            value={localQuery}
-            onChange={(e) => setLocalQuery(e.target.value)}
-            autoFocus
-          />
-          <Button type="submit" disabled={localQuery.length < 3}>
-            <Search className="mr-2 h-4 w-4" />
-            Ara
-          </Button>
-        </form>
+        {renderSearchForm()}
 
         <div className="mt-12 rounded-lg border border-dashed p-8 text-center">
           <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-40" />
@@ -164,30 +217,26 @@ export default function SearchResults() {
           <Search className="h-6 w-6" />
           <h1 className="text-4xl font-bold">Arama Sonuçları</h1>
         </div>
-        <p className="text-lg text-muted-foreground">
-          <span className="font-medium text-foreground">"{query}"</span> için
-          bulunan sonuçlar{" "}
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-lg text-muted-foreground">
+            <span className="font-medium text-foreground">"{query}"</span> için
+            bulunan sonuçlar
+          </p>
           {!isLoading && data && data.total > 0 && (
             <Badge variant="outline" className="ml-2">
               <span className="font-medium">{data.total} sonuç</span>
             </Badge>
           )}
-        </p>
+          {exactMatch && (
+            <Badge variant="secondary" className="ml-2 flex items-center gap-1">
+              <ScanSearch className="h-3 w-3" />
+              <span>Tam eşleşme</span>
+            </Badge>
+          )}
+        </div>
       </div>
 
-      <form onSubmit={handleSearch} className="mb-8 flex gap-2">
-        <Input
-          type="search"
-          placeholder="Blog yazılarında ara..."
-          className="max-w-md"
-          value={localQuery}
-          onChange={(e) => setLocalQuery(e.target.value)}
-        />
-        <Button type="submit" disabled={localQuery.length < 3}>
-          <Search className="mr-2 h-4 w-4" />
-          Ara
-        </Button>
-      </form>
+      {renderSearchForm()}
 
       <Button variant="outline" asChild className="mb-8">
         <Link href="/blog" className="flex items-center gap-2">
@@ -213,16 +262,18 @@ export default function SearchResults() {
             <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-40" />
             <h3 className="mb-2 text-lg font-medium">Sonuç bulunamadı</h3>
             <p className="mb-6 text-muted-foreground">
-              "{query}" araması için hiçbir sonuç bulunamadı. Lütfen farklı bir
-              arama terimi deneyin.
+              "{query}" araması için {exactMatch ? "tam eşleşme modunda " : ""}
+              hiçbir sonuç bulunamadı.
             </p>
 
             <div className="mt-8 text-left">
               <h4 className="mb-2 font-medium">Arama ipuçları:</h4>
               <ul className="space-y-1 text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <Tag className="h-4 w-4" /> Daha genel anahtar kelimeler
-                  kullanın
+                  <Tag className="h-4 w-4" />
+                  {exactMatch
+                    ? "Tam eşleşme modunu kapatarak daha fazla sonuç bulabilirsiniz"
+                    : "Daha genel anahtar kelimeler kullanın"}
                 </li>
                 <li className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" /> Yazım hatalarını kontrol edin

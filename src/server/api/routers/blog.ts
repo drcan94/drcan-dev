@@ -220,13 +220,14 @@ export const blogRouter = createTRPCRouter({
         query: z.string().min(1),
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(100).default(10),
+        exact: z.boolean().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { query, page, limit } = input;
+      const { query, page, limit, exact } = input;
 
-      // Clean and prepare the search query
-      const originalQuery = query.trim();
+      // Clean and prepare the search query - boşlukları temizle
+      const originalQuery = query.trim().replace(/\s+/g, " ");
 
       // If query is too short or only whitespace, return empty results
       if (!originalQuery || originalQuery.length < 3) {
@@ -258,10 +259,59 @@ export const blogRouter = createTRPCRouter({
 
       const normalizedQuery = normalizeText(originalQuery);
 
+      // Yaygın bağlaçları ve stopwords'leri filtrele
+      const stopWords = [
+        "ile",
+        "ve",
+        "bu",
+        "bir",
+        "de",
+        "da",
+        "için",
+        "the",
+        "in",
+        "on",
+        "at",
+        "veya",
+        "ama",
+        "fakat",
+        "ancak",
+        "olarak",
+        "gibi",
+        "kadar",
+        "nasıl",
+        "sonra",
+        "önce",
+        "dolayı",
+        "nedeniyle",
+        "rağmen",
+        "üzere",
+        "diye",
+        "ya",
+        "ki",
+        "ise",
+        "hatta",
+        "birlikte",
+        "karşın",
+        "sanki",
+        "oysa",
+        "çünkü",
+        "of",
+        "to",
+        "from",
+        "with",
+        "by",
+        "as",
+        "for",
+        "about",
+        "than",
+        "but",
+      ];
+
       // Arama sorgusunu kelimelere ayır
       const searchTerms = normalizedQuery
         .split(/\s+/)
-        .filter((term) => term.length >= 2);
+        .filter((term) => term.length >= 2 && !stopWords.includes(term));
 
       // İçerikten metin çıkarma fonksiyonu (JSON içeriği için)
       const extractTextFromContent = (content: string) => {
@@ -299,57 +349,114 @@ export const blogRouter = createTRPCRouter({
           score = Math.max(score, 80);
         }
 
-        // Başlık kelime eşleşmeleri (60-70)
+        // Başlık içinde tam ifade eşleşmesi (70)
+        if (postTitle.includes(normalizedQuery)) {
+          score = Math.max(score, 70);
+        }
+
+        // İçerikte tam ifade eşleşmesi (60)
+        if (postContentText.includes(normalizedQuery)) {
+          score = Math.max(score, 60);
+        }
+
+        // Başlık kelime eşleşmeleri (40-50)
         const titleMatches = searchTerms.filter((term) =>
           postTitle.includes(term),
         );
         if (titleMatches.length > 0) {
           const titleMatchScore =
-            60 + (titleMatches.length / searchTerms.length) * 10;
+            40 + (titleMatches.length / searchTerms.length) * 10;
           score = Math.max(score, titleMatchScore);
         }
 
-        // İçerik eşleşmeleri (30-50)
+        // İçerik eşleşmeleri (20-30)
         const contentMatches = searchTerms.filter((term) =>
           postContentText.includes(term),
         );
         if (contentMatches.length > 0) {
           const contentMatchScore =
-            30 + (contentMatches.length / searchTerms.length) * 20;
+            20 + (contentMatches.length / searchTerms.length) * 10;
           score = Math.max(score, contentMatchScore);
         }
 
         return score;
       };
 
-      // Gelişmiş arama yaklaşımı - her türlü muhtemel eşleşmeyi dene
-      const where = {
-        published: true,
-        OR: [
-          // Başlık eşleşmeleri
+      // Sorgu modunu belirle: Tam eşleşme mi yoksa kelime bazlı mı?
+      let where: any;
+
+      if (exact) {
+        // Tam eşleşme modu - Sadece tam ifadeyi ara
+        where = {
+          published: true,
+          OR: [
+            // Başlık tam eşleşme
+            {
+              title: {
+                contains: originalQuery,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+            // İçerik tam eşleşme
+            {
+              content: {
+                contains: originalQuery,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          ],
+        };
+      } else {
+        // Gelişmiş arama modu - tüm olası eşleşmeleri dene
+        const orderConditions = [
+          // Tam ifade araması - en yüksek öncelik
+          {
+            title: {
+              equals: originalQuery,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
+          {
+            title: {
+              startsWith: originalQuery,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
           {
             title: {
               contains: originalQuery,
               mode: Prisma.QueryMode.insensitive,
             },
           },
-          // Türkçe karakter alternatifleri
-          ...searchTerms.flatMap((term) => [
-            {
-              title: {
-                contains: term,
-                mode: Prisma.QueryMode.insensitive,
-              },
+          {
+            content: {
+              contains: originalQuery,
+              mode: Prisma.QueryMode.insensitive,
             },
-            {
-              content: {
-                contains: term,
-                mode: Prisma.QueryMode.insensitive,
-              },
+          },
+        ];
+
+        // Kelime bazlı arama - düşük öncelik
+        const termConditions = searchTerms.flatMap((term) => [
+          {
+            title: {
+              contains: term,
+              mode: Prisma.QueryMode.insensitive,
             },
-          ]),
-        ],
-      };
+          },
+          {
+            content: {
+              contains: term,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
+        ]);
+
+        where = {
+          published: true,
+          OR: [...orderConditions, ...termConditions],
+        };
+      }
 
       try {
         // Find matching posts
@@ -376,9 +483,14 @@ export const blogRouter = createTRPCRouter({
         // Sort by relevance score (highest first)
         scoredPosts.sort((a, b) => b.score - a.score);
 
+        // For exact mode, filter posts with sufficient relevance
+        const filteredPosts = exact
+          ? scoredPosts.filter((item) => item.score >= 50) // Tam eşleşme modunda min 50 puan şartı
+          : scoredPosts;
+
         // Apply pagination
-        const totalCount = scoredPosts.length;
-        const paginatedPosts = scoredPosts
+        const totalCount = filteredPosts.length;
+        const paginatedPosts = filteredPosts
           .slice((page - 1) * limit, page * limit)
           .map((scored) => scored.post);
 
