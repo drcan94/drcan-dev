@@ -92,9 +92,11 @@ const FilterUI = ({
 export function PaginatedPosts({
   initialData,
   showAdminControls = false,
+  showFilters = true,
 }: {
   initialData?: PaginatedPostsOutput;
   showAdminControls?: boolean;
+  showFilters?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -116,7 +118,7 @@ export function PaginatedPosts({
   const { data: tags } = api.tag.getAll.useQuery();
 
   // Get paginated posts
-  const { data, isLoading } = api.blog.getPaginated.useQuery(
+  const { data, isLoading, isFetching } = api.blog.getPaginated.useQuery(
     {
       page: currentPage,
       limit: POSTS_PER_PAGE,
@@ -274,14 +276,16 @@ export function PaginatedPosts({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <FilterUI
-          categories={categories}
-          tags={tags}
-          categoryParam={categoryParam}
-          tagParam={tagParam}
-          handleCategoryChange={handleCategoryChange}
-          handleTagChange={handleTagChange}
-        />
+        {showFilters && (
+          <FilterUI
+            categories={categories}
+            tags={tags}
+            categoryParam={categoryParam}
+            tagParam={tagParam}
+            handleCategoryChange={handleCategoryChange}
+            handleTagChange={handleTagChange}
+          />
+        )}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: POSTS_PER_PAGE }).map((_, index) => (
             <div
@@ -305,14 +309,16 @@ export function PaginatedPosts({
   if (!data || data.posts.length === 0) {
     return (
       <div className="space-y-6">
-        <FilterUI
-          categories={categories}
-          tags={tags}
-          categoryParam={categoryParam}
-          tagParam={tagParam}
-          handleCategoryChange={handleCategoryChange}
-          handleTagChange={handleTagChange}
-        />
+        {showFilters && (
+          <FilterUI
+            categories={categories}
+            tags={tags}
+            categoryParam={categoryParam}
+            tagParam={tagParam}
+            handleCategoryChange={handleCategoryChange}
+            handleTagChange={handleTagChange}
+          />
+        )}
         <div className="rounded-lg border border-dashed p-12 text-center">
           <h3 className="mb-2 text-lg font-medium">Yazı bulunamadı</h3>
           <p className="text-muted-foreground">
@@ -331,36 +337,65 @@ export function PaginatedPosts({
 
   return (
     <div className="space-y-6">
-      <FilterUI
-        categories={categories}
-        tags={tags}
-        categoryParam={categoryParam}
-        tagParam={tagParam}
-        handleCategoryChange={handleCategoryChange}
-        handleTagChange={handleTagChange}
-      />
+      {showFilters && (
+        <FilterUI
+          categories={categories}
+          tags={tags}
+          categoryParam={categoryParam}
+          tagParam={tagParam}
+          handleCategoryChange={handleCategoryChange}
+          handleTagChange={handleTagChange}
+        />
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {data.posts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            showAdminControls={showAdminControls}
-            onDeleteClick={handleDeleteClick}
-          />
-        ))}
+        {isFetching || isLoading ? (
+          <>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="space-y-4 rounded-lg border p-6">
+                <Skeleton className="h-5 w-2/3" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-5 rounded-full" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+            ))}
+          </>
+        ) : data?.posts.length === 0 ? (
+          <div className="col-span-3 rounded-lg border p-8 text-center">
+            <p className="text-muted-foreground">
+              Gösterilecek yazı bulunamadı.
+            </p>
+          </div>
+        ) : (
+          <>
+            {data?.posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                showAdminControls={showAdminControls}
+                onDeleteClick={
+                  showAdminControls
+                    ? () => handleDeleteClick(post.id, post.title)
+                    : undefined
+                }
+              />
+            ))}
+          </>
+        )}
       </div>
 
-      {renderPagination()}
+      {data && data.totalPages > 1 && renderPagination()}
 
+      {/* Silme onay dialogu */}
       <ConfirmDialog
         open={isDeleteModalOpen}
         onOpenChange={setIsDeleteModalOpen}
-        title="Yazıyı Sil"
-        description={`"${postToDelete?.title}" başlıklı yazıyı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
-        confirmText="Sil"
-        cancelText="İptal"
         onConfirm={confirmDelete}
+        title="Yazıyı Sil"
+        description={`"${postToDelete?.title}" yazısını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
+        confirmText="Evet, Sil"
+        cancelText="İptal"
         isLoading={deletePostMutation.isPending}
       />
     </div>

@@ -531,7 +531,10 @@ export default function SearchResults({
         </div>
       ) : data && data.posts.length > 0 ? (
         <div className="space-y-6">
-          <PaginatedPosts initialData={data as unknown as PaginatedPostsType} />
+          <PaginatedPosts
+            initialData={data as unknown as PaginatedPostsType}
+            showFilters={false}
+          />
         </div>
       ) : (
         <div className="space-y-6">
