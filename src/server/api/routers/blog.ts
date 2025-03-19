@@ -243,48 +243,118 @@ export const blogRouter = createTRPCRouter({
 
       console.log(`Search: Processing query "${originalQuery}"`);
 
-      // Gelişmiş arama yaklaşımı - öncelik sıralamalı
+      // Türkçe karakterleri normalize et
+      const normalizeText = (text: string) => {
+        // Büyük/küçük harf dönüşümünü ve türkçe karakterleri normalize et
+        return text
+          .toLowerCase()
+          .replace(/ğ/g, "g")
+          .replace(/ü/g, "u")
+          .replace(/ş/g, "s")
+          .replace(/ı/g, "i")
+          .replace(/ö/g, "o")
+          .replace(/ç/g, "c");
+      };
+
+      const normalizedQuery = normalizeText(originalQuery);
+
+      // Arama sorgusunu kelimelere ayır
+      const searchTerms = normalizedQuery
+        .split(/\s+/)
+        .filter((term) => term.length >= 2);
+
+      // İçerikten metin çıkarma fonksiyonu (JSON içeriği için)
+      const extractTextFromContent = (content: string) => {
+        try {
+          const contentObj = JSON.parse(content);
+          // Extract text from all content blocks
+          return contentObj
+            .flatMap(
+              (block: any) =>
+                block.content?.map((c: any) => c.text).filter(Boolean) || [],
+            )
+            .join(" ");
+        } catch (e) {
+          return content;
+        }
+      };
+
+      // Benzerlik skoru hesaplama (0-100 arası)
+      const calculateRelevanceScore = (post: any): number => {
+        const postTitle = normalizeText(post.title);
+        const postContentText = normalizeText(
+          extractTextFromContent(post.content),
+        );
+
+        // Başlangıç skoru
+        let score = 0;
+
+        // Tam başlık eşleşmesi - en yüksek skor (100)
+        if (postTitle === normalizedQuery) {
+          return 100;
+        }
+
+        // Başlık başlangıç eşleşmesi (80)
+        if (postTitle.startsWith(normalizedQuery)) {
+          score = Math.max(score, 80);
+        }
+
+        // Başlık kelime eşleşmeleri (60-70)
+        const titleMatches = searchTerms.filter((term) =>
+          postTitle.includes(term),
+        );
+        if (titleMatches.length > 0) {
+          const titleMatchScore =
+            60 + (titleMatches.length / searchTerms.length) * 10;
+          score = Math.max(score, titleMatchScore);
+        }
+
+        // İçerik eşleşmeleri (30-50)
+        const contentMatches = searchTerms.filter((term) =>
+          postContentText.includes(term),
+        );
+        if (contentMatches.length > 0) {
+          const contentMatchScore =
+            30 + (contentMatches.length / searchTerms.length) * 20;
+          score = Math.max(score, contentMatchScore);
+        }
+
+        return score;
+      };
+
+      // Gelişmiş arama yaklaşımı - her türlü muhtemel eşleşmeyi dene
       const where = {
         published: true,
         OR: [
-          // Tam başlık eşleşmesi (en yüksek öncelik)
-          {
-            title: {
-              equals: originalQuery,
-              mode: Prisma.QueryMode.insensitive,
-            },
-          },
-          // Başlık başlangıç eşleşmesi (yüksek öncelik)
-          {
-            title: {
-              startsWith: originalQuery,
-              mode: Prisma.QueryMode.insensitive,
-            },
-          },
-          // Başlık içerisinde eşleşme (orta öncelik)
+          // Başlık eşleşmeleri
           {
             title: {
               contains: originalQuery,
               mode: Prisma.QueryMode.insensitive,
             },
           },
-          // İçerik eşleşmesi (düşük öncelik)
-          {
-            content: {
-              contains: originalQuery,
-              mode: Prisma.QueryMode.insensitive,
+          // Türkçe karakter alternatifleri
+          ...searchTerms.flatMap((term) => [
+            {
+              title: {
+                contains: term,
+                mode: Prisma.QueryMode.insensitive,
+              },
             },
-          },
+            {
+              content: {
+                contains: term,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          ]),
         ],
       };
 
       try {
         // Find matching posts
-        const posts = await ctx.db.blogPost.findMany({
+        const allMatchingPosts = await ctx.db.blogPost.findMany({
           where,
-          orderBy: { createdAt: "desc" },
-          skip: (page - 1) * limit,
-          take: limit,
           include: {
             category: true,
             author: {
@@ -297,15 +367,27 @@ export const blogRouter = createTRPCRouter({
           },
         });
 
-        // Get total count for pagination
-        const totalCount = await ctx.db.blogPost.count({ where });
+        // Calculate relevance score for each post
+        const scoredPosts = allMatchingPosts.map((post) => ({
+          post,
+          score: calculateRelevanceScore(post),
+        }));
+
+        // Sort by relevance score (highest first)
+        scoredPosts.sort((a, b) => b.score - a.score);
+
+        // Apply pagination
+        const totalCount = scoredPosts.length;
+        const paginatedPosts = scoredPosts
+          .slice((page - 1) * limit, page * limit)
+          .map((scored) => scored.post);
 
         console.log(
-          `Search: Query "${originalQuery}" returned ${posts.length} posts (total: ${totalCount})`,
+          `Search: Query "${originalQuery}" returned ${paginatedPosts.length} posts (total: ${totalCount})`,
         );
 
         return {
-          posts,
+          posts: paginatedPosts,
           total: totalCount,
           totalPages: Math.ceil(totalCount / limit),
           page,
