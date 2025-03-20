@@ -15,11 +15,12 @@ import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
   title: {
-    default: "DrCan.dev - Yazılım ve Sağlık Blogu",
+    default:
+      "DrCan.dev - Yazılım, Felsefe, Sanat, Gündem, Edebiyat, Tarih, Din ve Sağlık Blogu",
     template: "%s | DrCan.dev",
   },
   description:
-    "Dr. Burak Can'ın kişisel blog ve portföy web sitesi. Sağlık ve yazılım üzerine içerikler.",
+    "Dr. Burak Can'ın kişisel blog sitesidir. Sağlık ve yazılım başta olmak üzeere felsefe, sanat, gündem, edebiyat, tarih, din üzerine içerikler.",
   keywords: [
     "blog",
     "yazılım geliştirme",
@@ -37,9 +38,10 @@ export const metadata: Metadata = {
     type: "website",
     locale: "tr_TR",
     url: "https://drcan.dev",
-    title: "DrCan.dev - Yazılım ve Sağlık Blogu",
+    title:
+      "DrCan.dev - Yazılım, Felsefe, Sanat, Gündem, Edebiyat, Tarih, Din ve Sağlık Blogu",
     description:
-      "Dr. Burak Can'ın kişisel blog ve portföy web sitesi. Sağlık ve yazılım üzerine içerikler.",
+      "Dr. Burak Can'ın kişisel blog sitesidir. Sağlık ve yazılım başta olmak üzeere felsefe, sanat, gündem, edebiyat, tarih, din üzerine içerikler.",
     siteName: "DrCan.dev",
     images: [
       {
@@ -52,8 +54,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "DrCan.dev - Yazılım ve Sağlık Blogu",
-    description: "Dr. Burak Can'ın kişisel blog ve portföy web sitesi",
+    title:
+      "DrCan.dev - Yazılım, Felsefe, Sanat, Gündem, Edebiyat, Tarih, Din ve Sağlık Blogu",
+    description:
+      "Dr. Burak Can'ın kişisel blog sitesidir. Sağlık ve yazılım başta olmak üzeere felsefe, sanat, gündem, edebiyat, tarih, din üzerine içerikler.",
     images: ["/twitter-image.jpg"],
     creator: "@drcandotdev",
   },
