@@ -70,16 +70,23 @@ export function PostCard({
   // Compact variant for admin listings
   if (isCompact) {
     return (
-      <div className={cn("relative flex flex-col gap-3 py-4", className)}>
+      <div
+        className={cn(
+          "relative flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md",
+          className,
+        )}
+      >
         <div className="flex items-start justify-between">
           <div className="max-w-[80%]">
-            <h3 className="mb-1 text-lg font-semibold">{post.title}</h3>
+            <h3 className="mb-1 text-base font-semibold group-hover:text-primary sm:text-lg">
+              {post.title}
+            </h3>
 
-            <div className="mb-2 line-clamp-2 text-sm text-muted-foreground">
+            <div className="mb-2 line-clamp-2 text-xs text-muted-foreground sm:text-sm">
               {getContentExcerpt()}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <time>
                 {post.updatedAt ? "Son güncelleme: " : ""}
                 {new Date(post.updatedAt || post.createdAt).toLocaleDateString(
@@ -95,16 +102,16 @@ export function PostCard({
           </div>
 
           {showAdminControls && (
-            <div className="flex flex-col gap-1 rounded-lg border bg-background/80 p-1 backdrop-blur-sm">
-              <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+            <div className="flex flex-col gap-1 rounded-lg border bg-background/90 p-1 shadow-sm backdrop-blur-sm">
+              <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
                 <Link href={`/blog/${post.slug}`} target="_blank">
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-3.5 w-3.5" />
                   <span className="sr-only">Görüntüle</span>
                 </Link>
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
                 <Link href={`/admin/posts/${post.id}/edit`}>
-                  <Edit2 className="h-4 w-4" />
+                  <Edit2 className="h-3.5 w-3.5" />
                   <span className="sr-only">Düzenle</span>
                 </Link>
               </Button>
@@ -112,10 +119,10 @@ export function PostCard({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-7 w-7"
                   onClick={() => onDeleteClick(post.id, post.title)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                   <span className="sr-only">Sil</span>
                 </Button>
               )}
@@ -123,17 +130,17 @@ export function PostCard({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {post.category && (
             <Link
-              href={`/blog?kategori=${post.category.id}`}
+              href={`/blog/search?kategori=${post.category.id}`}
               className="flex items-center gap-1 no-underline"
               onClick={(e) => e.stopPropagation()}
             >
               <FileText className="h-3 w-3 text-muted-foreground" />
               <Badge
                 variant="outline"
-                className="px-1.5 py-0 text-xs hover:bg-primary/10"
+                className="px-1.5 py-0 text-[10px] hover:bg-primary/10 sm:text-xs"
               >
                 {post.category.name}
               </Badge>
@@ -144,21 +151,27 @@ export function PostCard({
             <div className="flex items-center gap-1">
               <Tag className="h-3 w-3 text-muted-foreground" />
               <div className="flex flex-wrap gap-1">
-                {post.tags.slice(0, 3).map((tag) => (
+                {post.tags.slice(0, 2).map((tag) => (
                   <Link
                     key={tag.id}
-                    href={`/blog?etiket=${tag.id}`}
+                    href={`/blog/search?etiket=${tag.id}`}
                     className="no-underline"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <Badge variant="secondary" className="px-1.5 py-0 text-xs">
+                    <Badge
+                      variant="secondary"
+                      className="px-1.5 py-0 text-[10px] sm:text-xs"
+                    >
                       {tag.name}
                     </Badge>
                   </Link>
                 ))}
-                {post.tags.length > 3 && (
-                  <Badge variant="secondary" className="px-1 py-0 text-xs">
-                    +{post.tags.length - 3}
+                {post.tags.length > 2 && (
+                  <Badge
+                    variant="secondary"
+                    className="px-1 py-0 text-[10px] sm:text-xs"
+                  >
+                    +{post.tags.length - 2}
                   </Badge>
                 )}
               </div>
@@ -173,62 +186,12 @@ export function PostCard({
   return (
     <article
       className={cn(
-        "group relative rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md sm:p-4",
+        "group relative rounded-lg border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-4",
         className,
       )}
     >
-      {/* Category and Tags - Top right */}
-      <div className="absolute right-2 top-2 flex flex-wrap items-center gap-1.5 rounded-md bg-background/80 p-1 backdrop-blur-sm">
-        {post.category && (
-          <Link
-            href={`/blog?kategori=${post.category.id}`}
-            className="flex items-center gap-1 no-underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <FileText className="hidden h-3 w-3 text-muted-foreground sm:inline" />
-            <Badge
-              variant="outline"
-              className="px-1.5 py-0 text-[10px] hover:bg-primary/10 sm:text-xs"
-            >
-              {post.category.name}
-            </Badge>
-          </Link>
-        )}
-
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex items-center gap-1">
-            <Tag className="hidden h-3 w-3 text-muted-foreground sm:inline" />
-            <div className="flex flex-wrap gap-1">
-              {post.tags.slice(0, 1).map((tag) => (
-                <Link
-                  key={tag.id}
-                  href={`/blog?etiket=${tag.id}`}
-                  className="no-underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Badge
-                    variant="secondary"
-                    className="px-1.5 py-0 text-[10px] sm:text-xs"
-                  >
-                    {tag.name}
-                  </Badge>
-                </Link>
-              ))}
-              {post.tags.length > 1 && (
-                <Badge
-                  variant="secondary"
-                  className="px-1 py-0 text-[10px] sm:text-xs"
-                >
-                  +{post.tags.length - 1}
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Title */}
-      <h3 className="mb-1.5 mt-5 text-base font-semibold group-hover:text-primary sm:mb-2 sm:mt-6 sm:text-lg md:text-xl">
+      <h3 className="mb-1.5 text-base font-semibold group-hover:text-primary sm:text-lg md:text-xl">
         <Link
           href={`/blog/${post.slug}`}
           className="after:absolute after:inset-0 after:content-['']"
@@ -260,32 +223,82 @@ export function PostCard({
       </div>
 
       {/* Excerpt - smaller on mobile */}
-      <div className="mt-1.5 line-clamp-2 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
+      <div className="my-1.5 line-clamp-2 text-xs text-muted-foreground sm:my-2 sm:text-sm">
         {getContentExcerpt()}
+      </div>
+
+      {/* Category and Tags - bottom placement (like compact variant) */}
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {post.category && (
+          <Link
+            href={`/blog/search?kategori=${post.category.id}`}
+            className="flex items-center gap-1 no-underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <FileText className="h-3 w-3 text-muted-foreground" />
+            <Badge
+              variant="outline"
+              className="px-1.5 py-0 text-[10px] hover:bg-primary/10 sm:text-xs"
+            >
+              {post.category.name}
+            </Badge>
+          </Link>
+        )}
+
+        {post.tags && post.tags.length > 0 && (
+          <div className="flex items-center gap-1">
+            <Tag className="h-3 w-3 text-muted-foreground" />
+            <div className="flex flex-wrap gap-1">
+              {post.tags.slice(0, 2).map((tag) => (
+                <Link
+                  key={tag.id}
+                  href={`/blog/search?etiket=${tag.id}`}
+                  className="no-underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Badge
+                    variant="secondary"
+                    className="px-1.5 py-0 text-[10px] sm:text-xs"
+                  >
+                    {tag.name}
+                  </Badge>
+                </Link>
+              ))}
+              {post.tags.length > 2 && (
+                <Badge
+                  variant="secondary"
+                  className="px-1 py-0 text-[10px] sm:text-xs"
+                >
+                  +{post.tags.length - 2}
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Admin Controls */}
       {showAdminControls && (
-        <div className="mt-2 flex justify-end gap-1">
+        <div className="absolute right-2 top-2 flex gap-0.5 rounded-md bg-background/90 p-0.5 shadow-sm backdrop-blur-sm">
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 sm:h-8 sm:w-8"
+            className="h-6 w-6 sm:h-7 sm:w-7"
             asChild
           >
             <Link href={`/blog/${post.slug}`} target="_blank">
-              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               <span className="sr-only">Görüntüle</span>
             </Link>
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 sm:h-8 sm:w-8"
+            className="h-6 w-6 sm:h-7 sm:w-7"
             asChild
           >
             <Link href={`/admin/posts/${post.id}/edit`}>
-              <Edit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <Edit2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               <span className="sr-only">Düzenle</span>
             </Link>
           </Button>
@@ -293,10 +306,10 @@ export function PostCard({
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 sm:h-8 sm:w-8"
+              className="h-6 w-6 sm:h-7 sm:w-7"
               onClick={() => onDeleteClick(post.id, post.title)}
             >
-              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               <span className="sr-only">Sil</span>
             </Button>
           )}
