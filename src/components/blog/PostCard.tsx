@@ -72,7 +72,7 @@ export function PostCard({
     return (
       <div
         className={cn(
-          "relative flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md",
+          "relative my-4 flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md",
           className,
         )}
       >

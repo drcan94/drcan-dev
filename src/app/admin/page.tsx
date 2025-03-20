@@ -148,7 +148,7 @@ export default function AdminDashboard() {
         <div className="border-b px-6 py-4">
           <h2 className="text-lg font-semibold">Son Yayınlanan Yazılar</h2>
         </div>
-        <div className="divide-y px-6">
+        <div className="px-6">
           {isPublishedLoading ? (
             <div className="py-6">Yükleniyor...</div>
           ) : publishedPosts?.length === 0 ? (
