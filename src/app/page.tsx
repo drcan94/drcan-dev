@@ -96,7 +96,7 @@ export default function Home() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {posts.slice(0, 6).map((post) => (
               <PostCard key={post.id} post={post} />
             ))}

@@ -403,18 +403,17 @@ export function PaginatedPosts({
             handleTagChange={handleTagChange}
           />
         )}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {Array.from({ length: POSTS_PER_PAGE }).map((_, index) => (
             <div
               key={`skeleton-${index}`}
-              className="space-y-4 rounded-lg border p-6"
+              className="rounded-lg border p-4 shadow-sm"
             >
-              <Skeleton className="h-6 w-2/3" />
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-6 w-6 rounded-full" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-4 rounded-full" />
-                <Skeleton className="h-4 w-32" />
+              <div className="relative mb-3 aspect-[16/9] w-full bg-muted"></div>
+              <div className="space-y-2">
+                <div className="h-6 w-2/3 rounded-md bg-muted"></div>
+                <div className="h-4 w-full rounded-md bg-muted"></div>
+                <div className="h-4 w-1/2 rounded-md bg-muted"></div>
               </div>
             </div>
           ))}
@@ -477,44 +476,29 @@ export function PaginatedPosts({
         />
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {isFetching || isLoading ? (
-          <>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="space-y-4 rounded-lg border p-6">
-                <Skeleton className="h-5 w-2/3" />
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-5 w-5 rounded-full" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
-              </div>
-            ))}
-          </>
-        ) : data?.posts.length === 0 ? (
-          <div className="col-span-3 rounded-lg border p-8 text-center">
-            <p className="text-muted-foreground">
-              Gösterilecek yazı bulunamadı.
-            </p>
-          </div>
-        ) : (
-          <>
-            {data?.posts.map((post) => (
+      {data?.posts && data.posts.length > 0 ? (
+        <>
+          <div className="grid gap-4 sm:gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+            {data.posts.map((post) => (
               <PostCard
                 key={post.id}
                 post={post}
                 showAdminControls={showAdminControls}
                 onDeleteClick={
                   showAdminControls
-                    ? () => handleDeleteClick(post.id, post.title)
+                    ? (id, title) => handleDeleteClick(id, title)
                     : undefined
                 }
               />
             ))}
-          </>
-        )}
-      </div>
-
-      {data && data.totalPages > 1 && renderPagination()}
+          </div>
+          {renderPagination()}
+        </>
+      ) : (
+        <div className="col-span-3 rounded-lg border p-8 text-center">
+          <p className="text-muted-foreground">Gösterilecek yazı bulunamadı.</p>
+        </div>
+      )}
 
       {/* Silme onay dialogu */}
       <ConfirmDialog

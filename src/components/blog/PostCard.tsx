@@ -77,24 +77,24 @@ export function PostCard({
           className,
         )}
       >
-        {/* Cover image for compact view - larger and on the left */}
-        {post.coverImage ? (
-          <div className="relative h-auto w-[120px] shrink-0 overflow-hidden md:w-[180px]">
-            <Image
-              src={post.coverImage}
-              alt={post.title}
-              className="h-full w-full object-cover"
-              width={180}
-              height={120}
-            />
+        {/* Cover image for compact view - using aspect ratio */}
+        <div className="relative h-auto w-[120px] shrink-0 overflow-hidden md:w-[180px]">
+          <div className="relative aspect-square h-full w-full">
+            {post.coverImage ? (
+              <Image
+                src={post.coverImage}
+                alt={post.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 120px, 180px"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-muted">
+                <FileText className="h-8 w-8 opacity-20" />
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="relative h-auto w-[120px] shrink-0 bg-muted md:w-[180px]">
-            <div className="flex h-full items-center justify-center text-muted-foreground">
-              <FileText className="h-8 w-8 opacity-20" />
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Content section */}
         <div className="flex flex-1 flex-col justify-between p-3">
@@ -203,55 +203,57 @@ export function PostCard({
         className,
       )}
     >
-      {/* Cover Image - Larger with better styling */}
-      <div className="relative h-48 w-full overflow-hidden sm:h-56 md:h-64">
-        {post.coverImage ? (
-          <Image
-            src={post.coverImage}
-            alt={post.title}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-            className="object-cover transition-transform group-hover:scale-105"
-            priority
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-muted">
-            <FileText className="h-16 w-16 text-muted-foreground opacity-20" />
-          </div>
-        )}
+      {/* Cover Image - Using consistent aspect ratio with better image display */}
+      <div className="relative w-full overflow-hidden">
+        <div className="relative aspect-[16/9] w-full">
+          {post.coverImage ? (
+            <Image
+              src={post.coverImage}
+              alt={post.title}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+              className="object-cover transition-transform group-hover:scale-105"
+              priority
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-muted">
+              <FileText className="h-16 w-16 text-muted-foreground opacity-20" />
+            </div>
+          )}
 
-        {/* Category overlay on image */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3 pt-6">
-          <div className="flex flex-wrap gap-2">
-            {post.category && (
-              <Badge
-                variant="outline"
-                className="bg-background/80 px-2 py-0.5 text-xs backdrop-blur-sm"
-              >
-                {post.category.name}
-              </Badge>
-            )}
-
-            {post.tags &&
-              post.tags.length > 0 &&
-              post.tags.slice(0, 1).map((tag) => (
+          {/* Category overlay on image */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3 pt-6">
+            <div className="flex flex-wrap gap-2">
+              {post.category && (
                 <Badge
-                  key={tag.id}
+                  variant="outline"
+                  className="bg-background/80 px-2 py-0.5 text-xs backdrop-blur-sm"
+                >
+                  {post.category.name}
+                </Badge>
+              )}
+
+              {post.tags &&
+                post.tags.length > 0 &&
+                post.tags.slice(0, 1).map((tag) => (
+                  <Badge
+                    key={tag.id}
+                    variant="secondary"
+                    className="bg-primary/80 px-2 py-0.5 text-xs text-primary-foreground backdrop-blur-sm"
+                  >
+                    {tag.name}
+                  </Badge>
+                ))}
+
+              {post.tags && post.tags.length > 1 && (
+                <Badge
                   variant="secondary"
                   className="bg-primary/80 px-2 py-0.5 text-xs text-primary-foreground backdrop-blur-sm"
                 >
-                  {tag.name}
+                  +{post.tags.length - 1}
                 </Badge>
-              ))}
-
-            {post.tags && post.tags.length > 1 && (
-              <Badge
-                variant="secondary"
-                className="bg-primary/80 px-2 py-0.5 text-xs text-primary-foreground backdrop-blur-sm"
-              >
-                +{post.tags.length - 1}
-              </Badge>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
