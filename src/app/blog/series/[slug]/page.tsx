@@ -2,7 +2,13 @@ import { type Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, Edit, Tag as TagIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  Edit,
+  BookOpen,
+  FileText,
+} from "lucide-react";
 
 import { api } from "@/trpc/server";
 import { Button } from "@/components/ui/button";
@@ -102,6 +108,18 @@ export default async function SeriesPage({
           {series.description && (
             <div className="prose prose-lg dark:prose-invert max-w-none">
               <p className="text-xl">{series.description}</p>
+            </div>
+          )}
+
+          {/* Tek Sayfada Okuma Butonu */}
+          {visiblePosts.length > 0 && (
+            <div className="flex justify-center">
+              <Button size="lg" asChild className="gap-2">
+                <Link href={`/blog/series/${series.slug}/read`}>
+                  <FileText className="h-5 w-5" />
+                  Tüm Yazıları Tek Sayfada Oku
+                </Link>
+              </Button>
             </div>
           )}
 
