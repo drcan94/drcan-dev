@@ -69,7 +69,14 @@ const EditForm = ({ id }: { id: string }) => {
       setPublished(post.published);
       setCategoryId(post.categoryId);
       setSelectedTags(post.tags.map((tag) => tag.id));
-      setCoverImage(post.coverImage);
+
+      // Make sure to properly set the cover image value
+      if (post.coverImage) {
+        console.log("Setting cover image:", post.coverImage);
+        setCoverImage(post.coverImage);
+      } else {
+        setCoverImage(null);
+      }
 
       // Set content and trigger editor re-render
       if (post.content && !contentLoadedRef.current) {

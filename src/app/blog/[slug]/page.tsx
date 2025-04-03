@@ -63,15 +63,31 @@ export default async function BlogPostPage({
 
           {/* Cover Image */}
           {post.coverImage && (
-            <div className="relative mb-6 aspect-video w-full overflow-hidden rounded-lg border shadow-sm">
-              <Image
-                src={post.coverImage}
-                alt={post.title}
-                fill
-                sizes="(max-width: 768px) 100vw, 800px"
-                className="object-cover"
-                priority
-              />
+            <div className="relative mb-6 max-h-[600px] w-full overflow-hidden rounded-lg border shadow-sm">
+              <div className="relative aspect-[16/9] w-full">
+                <Image
+                  src={post.coverImage}
+                  alt={post.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 800px"
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm"
+                asChild
+              >
+                <Link
+                  href={post.coverImage}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Görseli Tam Görüntüle
+                </Link>
+              </Button>
             </div>
           )}
 
