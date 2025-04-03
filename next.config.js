@@ -31,6 +31,20 @@ const config = {
                 port: "",
                 pathname: "/**",
             },
+
+            {
+                protocol: "https",
+                hostname: "uploadthing.com",
+                port: "",
+                pathname: "/**",
+            },
+
+            {
+                protocol: "https",
+                hostname: "utfs.io",
+                port: "",
+                pathname: "/**",
+            },
         ],
     },
 };

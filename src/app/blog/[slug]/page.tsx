@@ -61,6 +61,20 @@ export default async function BlogPostPage({
             )}
           </div>
 
+          {/* Cover Image */}
+          {post.coverImage && (
+            <div className="relative mb-6 aspect-video w-full overflow-hidden rounded-lg border shadow-sm">
+              <Image
+                src={post.coverImage}
+                alt={post.title}
+                fill
+                sizes="(max-width: 768px) 100vw, 800px"
+                className="object-cover"
+                priority
+              />
+            </div>
+          )}
+
           <div className="mb-4 flex flex-wrap items-center gap-3 text-muted-foreground">
             <div className="flex items-center gap-2">
               {post.author.image && (

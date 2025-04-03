@@ -6,6 +6,7 @@ import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import { useTheme } from "next-themes";
 import { useState } from "react";
+import { useUploadThing } from "@/lib/uploadthing";
 
 interface EditorProps {
   content?: string;
@@ -13,13 +14,16 @@ interface EditorProps {
   isEditable?: boolean;
 }
 
-export default function Editor({
+export function ImageUploadEditor({
   content,
   onChange,
   isEditable = true,
 }: EditorProps) {
   const { resolvedTheme } = useTheme();
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Get the uploadThing client
+  const { startUpload } = useUploadThing("blogInlineImage");
 
   // Create editor with initial content and file upload support
   const editor = useCreateBlockNote({
@@ -28,28 +32,18 @@ export default function Editor({
     uploadFile: isEditable
       ? async (file) => {
           try {
-            // Create FormData to upload the file
-            const formData = new FormData();
-            formData.append("file", file);
+            // Use UploadThing client directly
+            const res = await startUpload([file]);
 
-            // Upload to UploadThing
-            const res = await fetch("/api/uploadthing?router=blogInlineImage", {
-              method: "POST",
-              body: formData,
-            });
-
-            if (!res.ok) {
-              const error = await res.text();
-              console.error("Upload failed:", error);
-              setUploadError(`Upload failed: ${res.status} ${res.statusText}`);
+            if (!res || res.length === 0) {
+              setUploadError("Upload failed: No response from server");
               return null;
             }
 
-            const data = await res.json();
-            console.log("Upload success:", data);
+            console.log("Upload success:", res);
 
             // Return the URL to use in the editor
-            return data.url;
+            return res[0].url;
           } catch (error) {
             console.error("Image upload error:", error);
             setUploadError(

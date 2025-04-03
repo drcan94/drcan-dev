@@ -723,6 +723,7 @@ export const blogRouter = createTRPCRouter({
         categoryId: z.string().optional(),
         tagIds: z.array(z.string()).optional(),
         slug: z.string().optional(),
+        coverImage: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -783,6 +784,7 @@ export const blogRouter = createTRPCRouter({
             slug,
             content: input.content,
             published: input.published,
+            coverImage: input.coverImage,
             author: {
               connect: { id: ctx.session.user.id },
             },
@@ -823,6 +825,7 @@ export const blogRouter = createTRPCRouter({
         categoryId: z.string().optional(),
         tagIds: z.array(z.string()).optional(),
         slug: z.string().optional(),
+        coverImage: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

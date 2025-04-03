@@ -7,6 +7,9 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import { LoadingProvider } from "@/components/providers/loading-provider";
 import Script from "next/script";
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "@/app/api/uploadthing/core";
 
 import { TRPCReactProvider } from "@/trpc/react";
 import { Navbar } from "@/components/navbar";
@@ -151,6 +154,9 @@ export default function RootLayout({
                 disableTransitionOnChange
                 storageKey="drcan-dev-theme"
               >
+                <NextSSRPlugin
+                  routerConfig={extractRouterConfig(ourFileRouter)}
+                />
                 <Navbar />
                 <main className="flex-1">
                   {children}

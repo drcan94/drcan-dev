@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
-import { Editor } from "@/components/DynamicEditor";
+import { EnhancedEditor } from "@/components/EnhancedDynamicEditor";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Plus, X } from "lucide-react";
+import { CoverImageUpload } from "@/components/ui/cover-image-upload";
 
 const EditForm = ({ id }: { id: string }) => {
   const router = useRouter();
@@ -27,6 +28,7 @@ const EditForm = ({ id }: { id: string }) => {
   const [published, setPublished] = useState(false);
   const [categoryId, setCategoryId] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [coverImage, setCoverImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [editorKey, setEditorKey] = useState(0); // Key for forcing re-render
@@ -60,12 +62,14 @@ const EditForm = ({ id }: { id: string }) => {
       console.log("Post data loaded:", {
         title: post.title,
         hasContent: !!post.content,
+        coverImage: post.coverImage,
       });
 
       setTitle(post.title);
       setPublished(post.published);
       setCategoryId(post.categoryId);
       setSelectedTags(post.tags.map((tag) => tag.id));
+      setCoverImage(post.coverImage);
 
       // Set content and trigger editor re-render
       if (post.content && !contentLoadedRef.current) {
@@ -110,22 +114,22 @@ const EditForm = ({ id }: { id: string }) => {
     },
   });
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title) {
+
+    if (!title.trim()) {
       toast.error("Başlık gereklidir");
       return;
     }
+
     if (!content) {
       toast.error("İçerik gereklidir");
       return;
     }
-    if (!categoryId) {
-      toast.error("Kategori seçimi gereklidir");
-      return;
-    }
 
     setIsSubmitting(true);
+
     updatePost.mutate({
       id,
       title,
@@ -133,9 +137,16 @@ const EditForm = ({ id }: { id: string }) => {
       published,
       categoryId,
       tagIds: selectedTags,
+      coverImage: coverImage || undefined,
     });
   };
 
+  // Handle content changes
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent);
+  };
+
+  // Handle tag toggle
   const handleTagToggle = (tagId: string) => {
     setSelectedTags((prev) =>
       prev.includes(tagId)
@@ -144,12 +155,13 @@ const EditForm = ({ id }: { id: string }) => {
     );
   };
 
+  // Remove tag
   const removeTag = (tagId: string) => {
     setSelectedTags((prev) => prev.filter((id) => id !== tagId));
   };
 
-  // Handle creation of a new tag
-  const handleCreateTag = (e: React.MouseEvent) => {
+  // Create new tag
+  const handleCreateTag = () => {
     if (!newTagName.trim()) {
       toast.error("Etiket adı boş olamaz");
       return;
@@ -158,73 +170,52 @@ const EditForm = ({ id }: { id: string }) => {
     createTagMutation.mutate({ name: newTagName.trim() });
   };
 
-  // Handle content change
-  const handleContentChange = (newContent: string) => {
-    console.log("Content changed");
-    setContent(newContent);
-  };
-
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-12">
-        <div className="space-y-4">
-          <div className="h-8 w-48 animate-pulse rounded bg-muted"></div>
-          <div className="h-4 w-full max-w-xl animate-pulse rounded bg-muted"></div>
-          <div className="mt-6 h-12 w-full max-w-xl animate-pulse rounded bg-muted"></div>
-          <div className="mt-6 h-96 w-full animate-pulse rounded bg-muted"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!post) {
-    return (
-      <div className="container mx-auto max-w-4xl px-4 py-12 text-center">
-        <h1 className="text-3xl font-bold">Yazı bulunamadı</h1>
-        <p className="mt-4 text-muted-foreground">
-          Aradığınız yazı mevcut değil veya düzenleme izniniz bulunmuyor.
-        </p>
-        <Button className="mt-8" onClick={() => router.push("/admin")}>
-          Gösterge Paneline Dön
-        </Button>
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-lg text-muted-foreground">Yazı yükleniyor...</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Yazı Düzenle</h1>
-        <p className="text-muted-foreground">Yazınızda değişiklikler yapın</p>
-      </div>
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      <h1 className="mb-6 text-3xl font-bold">Yazıyı Düzenle</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="title">Başlık</Label>
           <Input
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Yazı başlığı girin"
             className="max-w-xl"
-            required
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="category">Kategori</Label>
-          <Select value={categoryId} onValueChange={setCategoryId}>
-            <SelectTrigger className="max-w-xl">
-              <SelectValue placeholder="Kategori seçin" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories?.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {categories ? (
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Kategori seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="h-9 w-[180px] animate-pulse rounded-md bg-muted" />
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Kapak Görseli</Label>
+          <CoverImageUpload value={coverImage} onChange={setCoverImage} />
         </div>
 
         <div className="space-y-2">
@@ -317,13 +308,11 @@ const EditForm = ({ id }: { id: string }) => {
         <div className="space-y-2">
           <Label>İçerik</Label>
           <div className="min-h-[400px] rounded-md border">
-            {content && (
-              <Editor
-                key={editorKey}
-                content={content}
-                onChange={handleContentChange}
-              />
-            )}
+            <EnhancedEditor
+              key={editorKey}
+              content={content}
+              onChange={handleContentChange}
+            />
           </div>
         </div>
 

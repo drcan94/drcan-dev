@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { Editor } from "@/components/DynamicEditor";
+import { EnhancedEditor } from "@/components/EnhancedDynamicEditor";
+import { ImageUploadEditor } from "@/components/DynamicImageUploadEditor";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Plus, X } from "lucide-react";
+import { CoverImageUpload } from "@/components/ui/cover-image-upload";
 
 export default function NewPostPage() {
   const router = useRouter();
@@ -27,6 +30,7 @@ export default function NewPostPage() {
   const [published, setPublished] = useState(false);
   const [categoryId, setCategoryId] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [coverImage, setCoverImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTagName, setNewTagName] = useState("");
 
@@ -92,6 +96,7 @@ export default function NewPostPage() {
       published,
       categoryId,
       tagIds: selectedTags,
+      coverImage: coverImage || undefined,
     });
   };
 
@@ -171,6 +176,11 @@ export default function NewPostPage() {
           ) : (
             <p className="text-sm text-muted-foreground">Kategori bulunamadı</p>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Kapak Görseli</Label>
+          <CoverImageUpload value={coverImage} onChange={setCoverImage} />
         </div>
 
         <div className="space-y-2">
@@ -268,7 +278,7 @@ export default function NewPostPage() {
         <div className="space-y-2">
           <Label>İçerik</Label>
           <div className="min-h-[400px] rounded-md border">
-            <Editor content={content} onChange={setContent} />
+            <ImageUploadEditor content={content} onChange={setContent} />
           </div>
         </div>
 
