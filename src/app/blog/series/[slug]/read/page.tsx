@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Editor } from "@/components/DynamicEditor";
 import { Separator } from "@/components/ui/separator";
+import { ClientHashLinks } from "@/components/client-hash-links";
 import { auth } from "@/server/auth";
 
 export async function generateMetadata({
@@ -81,7 +82,8 @@ export default async function ReadSeriesPage({
     }
 
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-8 md:py-12">
+      <div id="top" className="container mx-auto max-w-4xl px-4 py-8 md:py-12">
+        <ClientHashLinks />
         <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="mb-2 flex flex-wrap gap-2 text-sm text-muted-foreground">
