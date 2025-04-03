@@ -70,6 +70,30 @@ export default function Editor({
 
   return (
     <div className="w-full max-w-none">
+      {isEditable && (
+        <div className="mb-4 rounded-md bg-muted p-3 text-sm">
+          <p className="mb-2 font-medium">Editör İpuçları:</p>
+          <ul className="ml-4 list-disc space-y-1 text-muted-foreground">
+            <li>
+              Metin bloğuna tıklayıp "/" tuşuna basarak farklı içerik tipleri
+              ekleyebilirsiniz
+            </li>
+            <li>
+              Görsel eklemek için: / tuşuna basıp "Image" seçin veya doğrudan
+              sürükleyip bırakın
+            </li>
+            <li>
+              İçerikte kullanılan görseller editörün genişliğine göre otomatik
+              ölçeklendirilir
+            </li>
+            <li>
+              Görseller için ideal boyut: 800-1200px genişliğinde, yüksek
+              kaliteli görseller
+            </li>
+          </ul>
+        </div>
+      )}
+
       {uploadError && (
         <div className="mb-2 rounded-md bg-destructive/10 p-2 text-sm text-destructive">
           Error: {uploadError}

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { UploadDropzone } from "@/lib/uploadthing";
 import { Button } from "./button";
-import { X, Info } from "lucide-react";
+import { X, Info, ImageIcon } from "lucide-react";
 
 interface CoverImageUploadProps {
   value: string | null | undefined;
@@ -27,17 +27,20 @@ export function CoverImageUpload({ value, onChange }: CoverImageUploadProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md bg-muted p-3 text-sm">
-        <div className="mb-2 flex items-center gap-2 font-medium">
-          <Info className="h-4 w-4 text-blue-500" />
-          <span>Kapak görseli önerileri:</span>
+      <div className="rounded-md bg-blue-50 p-4 text-sm dark:bg-blue-950/50">
+        <div className="mb-3 flex items-center gap-2 font-medium text-blue-700 dark:text-blue-400">
+          <Info className="h-4 w-4" />
+          <span>En iyi görünüm için görsel yükleme kuralları:</span>
         </div>
-        <ul className="ml-6 list-disc space-y-1 text-muted-foreground">
-          <li>Önerilen boyut: 1200×630 piksel (16:9 oranı)</li>
+        <ul className="ml-6 list-disc space-y-1.5 text-blue-700/90 dark:text-blue-400/90">
+          <li>
+            <strong>16:9 en-boy oranı</strong> kullanın (1920×1080, 1280×720,
+            800×450 piksel)
+          </li>
+          <li>Görseller, kartlarda tam olarak görüntülenecektir</li>
           <li>Maksimum dosya boyutu: 4MB</li>
-          <li>Format: JPEG, PNG veya WebP</li>
-          <li>Yatay (landscape) görsel kullanmanız önerilir</li>
-          <li>İçeriği ortalayın, kenarlardan kırpılabilir</li>
+          <li>Önerilen formatlar: JPEG, PNG veya WebP</li>
+          <li>Daha net görünüm için yüksek çözünürlüklü görseller kullanın</li>
         </ul>
       </div>
 
@@ -65,23 +68,42 @@ export function CoverImageUpload({ value, onChange }: CoverImageUploadProps) {
           </div>
         </div>
       ) : (
-        <UploadDropzone
-          endpoint="coverImage"
-          onClientUploadComplete={(res) => {
-            console.log("Upload complete:", res);
-            // Use the first file's URL if available
-            if (res && res[0]) {
-              const url = res[0].url;
-              setPreview(url);
-              onChange(url);
-            }
-          }}
-          onUploadError={(error: Error) => {
-            console.error("Upload error:", error);
-            alert(`Yükleme hatası: ${error.message}`);
-          }}
-          className="border-2 border-dashed border-muted-foreground/25"
-        />
+        <div className="overflow-hidden rounded-md border-2 border-dashed border-muted-foreground/25">
+          <UploadDropzone
+            endpoint="coverImage"
+            onClientUploadComplete={(res) => {
+              console.log("Upload complete:", res);
+              // Use the first file's URL if available
+              if (res && res[0]) {
+                const url = res[0].url;
+                setPreview(url);
+                onChange(url);
+              }
+            }}
+            onUploadError={(error: Error) => {
+              console.error("Upload error:", error);
+              alert(`Yükleme hatası: ${error.message}`);
+            }}
+            className="py-8"
+            content={{
+              label: (
+                <div className="flex flex-col items-center gap-4">
+                  <ImageIcon className="h-10 w-10 text-muted-foreground/50" />
+                  <div className="space-y-2 text-center">
+                    <p className="text-sm font-medium text-foreground">
+                      Kapak görseli yüklemek için tıklayın veya dosyayı
+                      sürükleyin
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      16:9 oranında görsel yüklemeniz önerilir (1920×1080,
+                      1280×720)
+                    </p>
+                  </div>
+                </div>
+              ),
+            }}
+          />
+        </div>
       )}
     </div>
   );

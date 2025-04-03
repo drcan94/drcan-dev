@@ -179,7 +179,12 @@ export default function NewPostPage() {
         </div>
 
         <div className="space-y-2">
-          <Label>Kapak Görseli</Label>
+          <div className="flex items-center justify-between">
+            <Label>Kapak Görseli</Label>
+            <span className="text-xs text-muted-foreground">
+              16:9 en-boy oranında görseller tavsiye edilir
+            </span>
+          </div>
           <CoverImageUpload value={coverImage} onChange={setCoverImage} />
         </div>
 

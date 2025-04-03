@@ -114,41 +114,43 @@ export function PostCard({
             </div>
           </div>
 
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-1">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              <time>
-                {new Date(post.updatedAt || post.createdAt).toLocaleDateString(
-                  "tr-TR",
-                  {
+          {/* Meta info at bottom */}
+          <div className="mt-auto pt-2 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <time>
+                  {new Date(
+                    post.updatedAt || post.createdAt,
+                  ).toLocaleDateString("tr-TR", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
-                  },
+                  })}
+                </time>
+              </div>
+
+              {/* Category and tags */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {post.category && (
+                  <Badge
+                    variant="outline"
+                    className="px-1.5 py-0 text-[10px] hover:bg-primary/10 sm:text-xs"
+                  >
+                    {post.category.name}
+                  </Badge>
                 )}
-              </time>
-            </div>
 
-            {/* Category and tags */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {post.category && (
-                <Badge
-                  variant="outline"
-                  className="px-1.5 py-0 text-[10px] hover:bg-primary/10 sm:text-xs"
-                >
-                  {post.category.name}
-                </Badge>
-              )}
-
-              {post.tags && post.tags.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="px-1.5 py-0 text-[10px] sm:text-xs"
-                >
-                  {post.tags[0]?.name}
-                  {post.tags.length > 1 ? ` +${post.tags.length - 1}` : ""}
-                </Badge>
-              )}
+                {post.tags && post.tags.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="px-1.5 py-0 text-[10px] sm:text-xs"
+                  >
+                    {post.tags[0]?.name}
+                    {post.tags.length > 1 ? ` +${post.tags.length - 1}` : ""}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -199,7 +201,7 @@ export function PostCard({
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-lg border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
+        "group relative flex h-full flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
         className,
       )}
     >
@@ -258,48 +260,52 @@ export function PostCard({
         </div>
       </div>
 
-      <div className="p-4">
-        {/* Title */}
-        <h3 className="mb-2 text-lg font-semibold group-hover:text-primary md:text-xl">
-          <Link
-            href={`/blog/${post.slug}`}
-            className="after:absolute after:inset-0 after:content-['']"
-          >
-            {post.title}
-          </Link>
-        </h3>
+      <div className="flex flex-1 flex-col justify-between p-4">
+        <div className="space-y-2">
+          {/* Title */}
+          <h3 className="text-lg font-semibold group-hover:text-primary md:text-xl">
+            <Link
+              href={`/blog/${post.slug}`}
+              className="after:absolute after:inset-0 after:content-['']"
+            >
+              {post.title}
+            </Link>
+          </h3>
 
-        {/* Excerpt - cleaner layout */}
-        <div className="mb-3 line-clamp-2 text-sm text-muted-foreground">
-          {getContentExcerpt()}
+          {/* Excerpt - takes up available space */}
+          <div className="line-clamp-3 text-sm text-muted-foreground">
+            {getContentExcerpt()}
+          </div>
         </div>
 
-        {/* Author and date in footer */}
-        <div className="flex items-center justify-between border-t pt-3 text-xs text-muted-foreground sm:text-sm">
-          <div className="flex items-center gap-2">
-            {post.author.image ? (
-              <Image
-                src={post.author.image}
-                alt={post.author.name ?? ""}
-                className="h-6 w-6 rounded-full"
-                width={24}
-                height={24}
-              />
-            ) : (
-              <div className="h-6 w-6 rounded-full bg-muted"></div>
-            )}
-            <span>{post.author.name}</span>
-          </div>
+        {/* Author and date fixed at bottom */}
+        <div className="mt-4 border-t pt-3 text-xs text-muted-foreground sm:text-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {post.author.image ? (
+                <Image
+                  src={post.author.image}
+                  alt={post.author.name ?? ""}
+                  className="h-6 w-6 rounded-full"
+                  width={24}
+                  height={24}
+                />
+              ) : (
+                <div className="h-6 w-6 rounded-full bg-muted"></div>
+              )}
+              <span>{post.author.name}</span>
+            </div>
 
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            <time>
-              {new Date(post.createdAt).toLocaleDateString("tr-TR", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </time>
+            <div className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              <time>
+                {new Date(post.createdAt).toLocaleDateString("tr-TR", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </time>
+            </div>
           </div>
         </div>
       </div>
