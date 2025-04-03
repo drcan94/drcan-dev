@@ -724,6 +724,8 @@ export const blogRouter = createTRPCRouter({
         tagIds: z.array(z.string()).optional(),
         slug: z.string().optional(),
         coverImage: z.string().optional(),
+        seriesId: z.string().optional(),
+        seriesOrder: z.number().int().positive().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -798,6 +800,14 @@ export const blogRouter = createTRPCRouter({
                   },
                 }
               : {}),
+            ...(input.seriesId
+              ? {
+                  series: {
+                    connect: { id: input.seriesId },
+                  },
+                  seriesOrder: input.seriesOrder || 1,
+                }
+              : {}),
           },
         });
       } catch (error) {
@@ -826,6 +836,8 @@ export const blogRouter = createTRPCRouter({
         tagIds: z.array(z.string()).optional(),
         slug: z.string().optional(),
         coverImage: z.string().optional(),
+        seriesId: z.string().optional(),
+        seriesOrder: z.number().int().positive().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -871,7 +883,7 @@ export const blogRouter = createTRPCRouter({
       }
 
       // Update post with new data
-      return ctx.db.blogPost.update({
+      const updatedPost = await ctx.db.blogPost.update({
         where: { id },
         data: {
           ...data,
@@ -886,8 +898,25 @@ export const blogRouter = createTRPCRouter({
                 }
               : {}),
           },
+          ...(input.seriesId !== undefined
+            ? input.seriesId
+              ? {
+                  series: {
+                    connect: { id: input.seriesId },
+                  },
+                  seriesOrder: input.seriesOrder || 1,
+                }
+              : {
+                  series: {
+                    disconnect: true,
+                  },
+                  seriesOrder: null,
+                }
+            : {}),
         },
       });
+
+      return updatedPost;
     }),
 
   // ---------------------------------------------------

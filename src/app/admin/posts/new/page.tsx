@@ -33,6 +33,9 @@ export default function NewPostPage() {
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTagName, setNewTagName] = useState("");
+  // Seri alanları
+  const [seriesId, setSeriesId] = useState<string | null>(null);
+  const [seriesOrder, setSeriesOrder] = useState<number | null>(null);
 
   const utils = api.useUtils();
 
@@ -42,6 +45,10 @@ export default function NewPostPage() {
 
   // Fetch tags
   const { data: tags, isLoading: isTagsLoading } = api.tag.getAll.useQuery();
+
+  // Fetch series
+  const { data: seriesList, isLoading: isSeriesLoading } =
+    api.series.getAll.useQuery();
 
   // Create tag mutation
   const createTagMutation = api.tag.create.useMutation({
@@ -65,6 +72,9 @@ export default function NewPostPage() {
       void utils.blog.getDrafts.invalidate();
       void utils.blog.getAll.invalidate();
       void utils.blog.getPaginated.invalidate();
+      if (seriesId) {
+        void utils.series.getById.invalidate({ id: seriesId });
+      }
       router.push("/admin");
       router.refresh();
     },
@@ -97,6 +107,8 @@ export default function NewPostPage() {
       categoryId,
       tagIds: selectedTags,
       coverImage: coverImage || undefined,
+      seriesId: seriesId || undefined,
+      seriesOrder: seriesOrder || undefined,
     });
   };
 
@@ -135,6 +147,30 @@ export default function NewPostPage() {
       generalCategory ? generalCategory.id : categories[0]?.id || "",
     );
   }
+
+  // Seriden çıkarma işlemi
+  const handleRemoveFromSeries = () => {
+    setSeriesId(null);
+    setSeriesOrder(null);
+  };
+
+  // Seri seçildiğinde, otomatik olarak bir sonraki sıra numarasını belirle
+  const handleSeriesChange = (selectedSeriesId: string) => {
+    setSeriesId(selectedSeriesId);
+
+    // Eğer seri seçildiyse ve seriesList mevcutsa
+    if (selectedSeriesId && seriesList) {
+      // Seçilen seriyi bul
+      const selectedSeries = seriesList.find((s) => s.id === selectedSeriesId);
+      if (selectedSeries) {
+        // Serideki mevcut yazı sayısını al ve sıradaki sayıyı belirle
+        const nextOrder = selectedSeries.posts.length + 1;
+        setSeriesOrder(nextOrder);
+      } else {
+        setSeriesOrder(1); // Varsayılan olarak ilk sırayı ata
+      }
+    }
+  };
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12">
@@ -175,6 +211,68 @@ export default function NewPostPage() {
             </Select>
           ) : (
             <p className="text-sm text-muted-foreground">Kategori bulunamadı</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="series">Blog Serisi</Label>
+          {isSeriesLoading ? (
+            <div className="h-10 w-[280px] animate-pulse rounded-md bg-muted"></div>
+          ) : (
+            <div className="space-y-3">
+              {seriesId ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="px-3 py-1.5">
+                        {seriesList?.find((s) => s.id === seriesId)?.title}
+                      </Badge>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveFromSeries}
+                      >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Seriden Çıkar</span>
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="seriesOrder" className="text-sm">
+                        Sıra
+                      </Label>
+                      <Input
+                        id="seriesOrder"
+                        type="number"
+                        min="1"
+                        value={seriesOrder ?? ""}
+                        onChange={(e) =>
+                          setSeriesOrder(parseInt(e.target.value) || null)
+                        }
+                        className="w-24"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : seriesList && seriesList.length > 0 ? (
+                <Select onValueChange={handleSeriesChange}>
+                  <SelectTrigger className="w-[280px]">
+                    <SelectValue placeholder="Bu yazıyı bir seriye ekleyin (isteğe bağlı)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seriesList.map((series) => (
+                      <SelectItem key={series.id} value={series.id}>
+                        {series.title} ({series.posts.length} yazı)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Henüz bir blog serisi oluşturulmamış
+                </p>
+              )}
+            </div>
           )}
         </div>
 

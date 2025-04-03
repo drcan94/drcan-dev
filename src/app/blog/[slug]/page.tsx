@@ -2,7 +2,13 @@ import { type Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Edit, Tag as TagIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Edit,
+  Tag as TagIcon,
+  BookOpen,
+  ChevronRight,
+} from "lucide-react";
 
 import { api } from "@/trpc/server";
 import { Button } from "@/components/ui/button";
@@ -40,6 +46,11 @@ export default async function BlogPostPage({
 
   try {
     const post = await api.blog.getBySlug({ slug: params.slug });
+    // Eğer yazı bir serinin parçasıysa, seriyi getir
+    let series = null;
+    if (post.seriesId) {
+      series = await api.series.getById({ id: post.seriesId });
+    }
 
     return (
       <div className="container mx-auto max-w-4xl px-4 py-8 md:py-12">
@@ -88,6 +99,48 @@ export default async function BlogPostPage({
                   Görseli Tam Görüntüle
                 </Link>
               </Button>
+            </div>
+          )}
+
+          {/* Series Info */}
+          {series && (
+            <div className="mb-6 overflow-hidden rounded-md border">
+              <div className="bg-muted px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  <h4 className="text-sm font-semibold text-primary">
+                    Bu yazı bir serinin parçasıdır
+                  </h4>
+                </div>
+              </div>
+              <div className="p-4">
+                <Link
+                  href={`/blog/series/${series.slug}`}
+                  className="font-medium hover:text-primary hover:underline"
+                >
+                  {series.title}
+                </Link>
+                {series.description && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {series.description}
+                  </p>
+                )}
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    {series.posts.length} yazıdan{" "}
+                    {series.posts.findIndex((p) => p.id === post.id) + 1}. yazı
+                  </div>
+                  <Button size="sm" variant="ghost" asChild>
+                    <Link
+                      href={`/blog/series/${series.slug}`}
+                      className="flex items-center gap-1 text-sm"
+                    >
+                      Tüm seriyi görüntüle
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 

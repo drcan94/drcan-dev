@@ -29,6 +29,21 @@ model Tag {
   @@index([slug])
 }
 
+model Series {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  slug        String     @unique
+  coverImage  String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  authorId    String
+  author      User       @relation(fields: [authorId], references: [id])
+  posts       BlogPost[]
+
+  @@index([slug])
+}
+
 model BlogPost {
   id         String   @id @default(cuid())
   title      String
@@ -40,12 +55,16 @@ model BlogPost {
   categoryId String
   slug       String   @unique
   coverImage String?
+  seriesId   String?
+  seriesOrder Int?
   author     User     @relation(fields: [authorId], references: [id])
   category   Category @relation(fields: [categoryId], references: [id])
+  series     Series?  @relation(fields: [seriesId], references: [id])
   tags       Tag[]    @relation("BlogPostToTag")
 
   @@index([title])
   @@index([slug])
+  @@index([seriesId])
 }
 
 model Account {
@@ -84,6 +103,7 @@ model User {
   isAdmin       Boolean    @default(false)
   accounts      Account[]
   blogPosts     BlogPost[]
+  series        Series[]
   sessions      Session[]
 }
 

@@ -11,6 +11,7 @@ import {
   FilePlus,
   FileEdit,
   Files,
+  BookOpen,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
@@ -27,6 +28,7 @@ import {
 
 const navigation = [
   { name: "Blog", href: "/blog", icon: FileText },
+  { name: "Seriler", href: "/blog/series", icon: BookOpen },
   { name: "Hakkımda", href: "/about", icon: User },
 ];
 
@@ -35,6 +37,7 @@ const adminNavigation = [
   { name: "Yeni Yazı", href: "/admin/posts/new", icon: FilePlus },
   { name: "Taslaklar", href: "/admin/posts/drafts", icon: FileEdit },
   { name: "Tüm Yazılar", href: "/admin/posts", icon: Files },
+  { name: "Seriler", href: "/admin/series", icon: BookOpen },
 ];
 
 export function Navbar() {

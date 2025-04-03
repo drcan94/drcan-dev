@@ -33,6 +33,9 @@ const EditForm = ({ id }: { id: string }) => {
   const [newTagName, setNewTagName] = useState("");
   const [editorKey, setEditorKey] = useState(0); // Key for forcing re-render
   const contentLoadedRef = useRef(false);
+  // Seri alanları
+  const [seriesId, setSeriesId] = useState<string | null>(null);
+  const [seriesOrder, setSeriesOrder] = useState<number | null>(null);
 
   const utils = api.useUtils();
 
@@ -42,6 +45,10 @@ const EditForm = ({ id }: { id: string }) => {
   // Fetch categories and tags
   const { data: categories } = api.category.getAll.useQuery();
   const { data: tags } = api.tag.getAll.useQuery();
+
+  // Fetch series
+  const { data: seriesList, isLoading: isSeriesLoading } =
+    api.series.getAll.useQuery();
 
   // Create tag mutation
   const createTagMutation = api.tag.create.useMutation({
@@ -63,12 +70,20 @@ const EditForm = ({ id }: { id: string }) => {
         title: post.title,
         hasContent: !!post.content,
         coverImage: post.coverImage,
+        seriesId: post.seriesId,
+        seriesOrder: post.seriesOrder,
       });
 
       setTitle(post.title);
       setPublished(post.published);
       setCategoryId(post.categoryId);
       setSelectedTags(post.tags.map((tag) => tag.id));
+
+      // Seri bilgilerini ayarla
+      if (post.seriesId) {
+        setSeriesId(post.seriesId);
+        setSeriesOrder(post.seriesOrder || null);
+      }
 
       // Make sure to properly set the cover image value
       if (post.coverImage) {
@@ -113,6 +128,9 @@ const EditForm = ({ id }: { id: string }) => {
       void utils.blog.getDrafts.invalidate();
       void utils.blog.getAll.invalidate();
       void utils.blog.getById.invalidate({ id });
+      if (seriesId) {
+        void utils.series.getById.invalidate({ id: seriesId });
+      }
       router.push("/admin");
     },
     onError: (error) => {
@@ -145,6 +163,8 @@ const EditForm = ({ id }: { id: string }) => {
       categoryId,
       tagIds: selectedTags,
       coverImage: coverImage || undefined,
+      seriesId: seriesId || undefined,
+      seriesOrder: seriesOrder || undefined,
     });
   };
 
@@ -175,6 +195,30 @@ const EditForm = ({ id }: { id: string }) => {
     }
 
     createTagMutation.mutate({ name: newTagName.trim() });
+  };
+
+  // Seriden çıkarma işlemi
+  const handleRemoveFromSeries = () => {
+    setSeriesId(null);
+    setSeriesOrder(null);
+  };
+
+  // Seri seçildiğinde, otomatik olarak bir sonraki sıra numarasını belirle
+  const handleSeriesChange = (selectedSeriesId: string) => {
+    setSeriesId(selectedSeriesId);
+
+    // Eğer seri seçildiyse ve seriesList mevcutsa
+    if (selectedSeriesId && seriesList) {
+      // Seçilen seriyi bul
+      const selectedSeries = seriesList.find((s) => s.id === selectedSeriesId);
+      if (selectedSeries) {
+        // Serideki mevcut yazı sayısını al ve sıradaki sayıyı belirle
+        const nextOrder = selectedSeries.posts.length + 1;
+        setSeriesOrder(nextOrder);
+      } else {
+        setSeriesOrder(1); // Varsayılan olarak ilk sırayı ata
+      }
+    }
   };
 
   if (isLoading) {
@@ -217,6 +261,68 @@ const EditForm = ({ id }: { id: string }) => {
             </Select>
           ) : (
             <div className="h-9 w-[180px] animate-pulse rounded-md bg-muted" />
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="series">Blog Serisi</Label>
+          {isSeriesLoading ? (
+            <div className="h-10 w-[280px] animate-pulse rounded-md bg-muted"></div>
+          ) : (
+            <div className="space-y-3">
+              {seriesId ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="px-3 py-1.5">
+                        {seriesList?.find((s) => s.id === seriesId)?.title}
+                      </Badge>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveFromSeries}
+                      >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Seriden Çıkar</span>
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="seriesOrder" className="text-sm">
+                        Sıra
+                      </Label>
+                      <Input
+                        id="seriesOrder"
+                        type="number"
+                        min="1"
+                        value={seriesOrder ?? ""}
+                        onChange={(e) =>
+                          setSeriesOrder(parseInt(e.target.value) || null)
+                        }
+                        className="w-24"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : seriesList && seriesList.length > 0 ? (
+                <Select onValueChange={handleSeriesChange}>
+                  <SelectTrigger className="w-[280px]">
+                    <SelectValue placeholder="Bu yazıyı bir seriye ekleyin (isteğe bağlı)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seriesList.map((series) => (
+                      <SelectItem key={series.id} value={series.id}>
+                        {series.title} ({series.posts.length} yazı)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Henüz bir blog serisi oluşturulmamış
+                </p>
+              )}
+            </div>
           )}
         </div>
 
