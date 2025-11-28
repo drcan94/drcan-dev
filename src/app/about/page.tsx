@@ -176,7 +176,7 @@ export default function AboutPage() {
                 <p>
                   Tıp eğitimimi Atatürk ve Sakarya Üniversitelerinde
                   tamamladıktan sonra, çeşitli hastanelerde görev aldım. Şu anda
-                  Konya Şehir Hastanesi'nde göğüs cerrahisi uzmanlık eğitimimi
+                  Konya Şehir Hastanesi'nde <strong>Göğüs Cerrahisi</strong> uzmanlık eğitimimi
                   sürdürmekteyim. 2020 yılında, COVID-19 pandemisi
                   sırasında yazılım geliştirmeye ilgi duymaya başladım ve bu
                   alanda kendimi sürekli geliştiriyorum.

@@ -40,8 +40,8 @@ export default function Home() {
             </div>
             <p className="text-lg text-muted-foreground">
               Ocak 2023'te Sakarya Üniversitesi'nden mezun oldum. Çeşitli
-              görevlendirmelerden sonra şu anda Konya Şehir Hastanesi'nde
-              göğüs cerrahisi uzmanlık eğitimimi sürdürmekteyim.
+              görevlendirmelerden sonra şu anda Konya Şehir Hastanesi'nde{" "}
+              <span className="font-bold">Göğüs Cerrahisi</span> uzmanlık eğitimimi sürdürmekteyim.
               2020 yılından beri yazılım geliştirmeye olan ilgimle sağlık
               teknolojileri alanında köprü kurmaya çalışıyorum.
             </p>
