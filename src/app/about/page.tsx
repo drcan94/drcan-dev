@@ -70,18 +70,39 @@ const educationExperience = [
       "Mecburi hizmet görevim kapsamında Mart 2023'te Konya Taşkent'e atandım. Taşkent, Hadim, Bozkır ilçeleri ve Beyhekim Devlet Hastanesi'nde görevlendirmelerle çalıştım. Nisan 2023'te Maraş depremi sonrası 15 günlük Hatay görevlendirmem oldu.",
   },
   {
-    period: "Eylül 2024",
+    period: "Eylül 2024 - 15 Ekim 2024",
     title: "Anesteziyoloji ve Reanimasyon Asistanı",
     institution: "Necmettin Erbakan Üniversitesi Meram Tıp Fakültesi",
     description:
-      "Kısa bir süre anestezi asistanlığına başladım ancak uzmanlık eğitiminden feragat ederek pratisyenliğe döndüm.",
+      "Eylül 2024'te anestezi asistanlığına başladım ancak 15 Ekim 2024'te uzmanlık eğitiminden feragat ederek ayrıldım.",
   },
   {
-    period: "Ocak 2025 - Günümüz",
+    period: "Ekim 2024 - Ocak 2025",
+    title: "Pratisyen Hekim",
+    institution: "Geçiş Dönemi",
+    description:
+      "Anestezi asistanlığından ayrıldıktan sonra yaklaşık 2-3 ay pratisyen kadrosuna dönmeyi bekledim.",
+  },
+  {
+    period: "Ocak 2025 - Eylül 2025",
     title: "Pratisyen Hekim",
     institution: "Karaman Eğitim ve Araştırma Hastanesi",
     description:
-      "Karaman Eğitim ve Araştırma Hastanesi acil servisinde pratisyen hekim olarak görev yapmaktayım.",
+      "Karaman Eğitim ve Araştırma Hastanesi acil servisinde pratisyen hekim olarak görev yaptım. Bu süreçte Nisan-Haziran 2025 tarihleri arasında Hakkari görevlendirmesinde bulundum.",
+  },
+  {
+    period: "Eylül 2025 - 9 Ekim 2025",
+    title: "Aile Hekimliği Asistanı",
+    institution: "Konya Şehir Hastanesi",
+    description:
+      "Konya Şehir Hastanesi'nde yaklaşık bir ay süreyle aile hekimliği asistanlığı yaptım.",
+  },
+  {
+    period: "9 Ekim 2025 - Günümüz",
+    title: "Göğüs Cerrahisi Asistanı",
+    institution: "Konya Şehir Hastanesi",
+    description:
+      "9 Ekim 2025 tarihinde Konya Şehir Hastanesi'nde göğüs cerrahisi uzmanlık eğitimime başladım ve devam etmekteyim.",
   },
   {
     period: "2020 - Günümüz",
@@ -155,8 +176,8 @@ export default function AboutPage() {
                 <p>
                   Tıp eğitimimi Atatürk ve Sakarya Üniversitelerinde
                   tamamladıktan sonra, çeşitli hastanelerde görev aldım. Şu anda
-                  Karaman Eğitim ve Araştırma Hastanesi'nde pratisyen hekim
-                  olarak çalışmaktayım. 2020 yılında, COVID-19 pandemisi
+                  Konya Şehir Hastanesi'nde göğüs cerrahisi uzmanlık eğitimimi
+                  sürdürmekteyim. 2020 yılında, COVID-19 pandemisi
                   sırasında yazılım geliştirmeye ilgi duymaya başladım ve bu
                   alanda kendimi sürekli geliştiriyorum.
                 </p>
