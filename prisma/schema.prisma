@@ -45,23 +45,24 @@ model Series {
 }
 
 model BlogPost {
-  id         String   @id @default(cuid())
-  title      String
-  content    String
-  published  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  authorId   String
-  categoryId String
-  slug       String   @unique
-  coverImage String?
-  seriesId   String?
+  id          String     @id @default(cuid())
+  title       String
+  content     String
+  published   Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  authorId    String
+  categoryId  String
+  slug        String     @unique
+  coverImage  String?
+  seriesId    String?
   seriesOrder Int?
-  viewCount  Int      @default(0)
-  author     User     @relation(fields: [authorId], references: [id])
-  category   Category @relation(fields: [categoryId], references: [id])
-  series     Series?  @relation(fields: [seriesId], references: [id])
-  tags       Tag[]    @relation("BlogPostToTag")
+  viewCount   Int        @default(0)
+  author      User       @relation(fields: [authorId], references: [id])
+  category    Category   @relation(fields: [categoryId], references: [id])
+  series      Series?    @relation(fields: [seriesId], references: [id])
+  tags        Tag[]      @relation("BlogPostToTag")
+  views       PostView[]
 
   @@index([title])
   @@index([slug])
@@ -114,4 +115,19 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model PostView {
+  id          String   @id @default(cuid())
+  postId      String
+  fingerprint String
+  createdAt   DateTime @default(now())
+  post        BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Composite index for efficient lookups: find views by post + fingerprint
+  @@index([postId, fingerprint])
+  // Index for cleanup queries (delete old views)
+  @@index([createdAt])
+  // Index for postId alone for counting/aggregations
+  @@index([postId])
 }
