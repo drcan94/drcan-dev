@@ -1,27 +1,96 @@
 import { type Metadata } from "next";
 import { Suspense } from "react";
 import { unstable_cache } from "next/cache";
+import { type Prisma } from "@prisma/client";
 
-import { api } from "@/trpc/server";
+import { db } from "@/server/db";
 import { PaginatedPosts } from "@/components/blog/paginated-posts";
 import { BlogSearch } from "@/components/blog/search";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// OPTIMIZATION: Direct database query for caching (tRPC uses headers which can't be cached)
+async function getPaginatedPostsFromDb(
+  page: number,
+  limit: number,
+  categoryId?: string,
+  tagId?: string
+) {
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.BlogPostWhereInput = {
+    published: true,
+    ...(categoryId ? { categoryId } : {}),
+    ...(tagId
+      ? {
+          tags: {
+            some: {
+              id: tagId,
+            },
+          },
+        }
+      : {}),
+  };
+
+  const [posts, total] = await Promise.all([
+    db.blogPost.findMany({
+      where,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        coverImage: true,
+        createdAt: true,
+        updatedAt: true,
+        published: true,
+        viewCount: true,
+        author: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        tags: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    db.blogPost.count({ where }),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+  const hasMore = page < totalPages;
+
+  return {
+    posts,
+    total,
+    currentPage: page,
+    pageSize: limit,
+    totalPages,
+    hasMore,
+  };
+}
+
 // OPTIMIZATION: Cache blog posts for 60 seconds to reduce DB hits
-// Revalidates when posts are created/updated via revalidateTag("blog-posts")
 const getCachedPaginatedPosts = unstable_cache(
-  async (page: number, limit: number, categoryId?: string, tagId?: string) => {
-    return api.blog.getPaginated({
-      page,
-      limit,
-      categoryId,
-      tagId,
-    });
-  },
+  getPaginatedPostsFromDb,
   ["blog-posts-paginated"],
   {
-    revalidate: 60, // Revalidate every 60 seconds
-    tags: ["blog-posts"], // Can be invalidated with revalidateTag("blog-posts")
+    revalidate: 60,
+    tags: ["blog-posts"],
   }
 );
 
