@@ -64,9 +64,20 @@ model BlogPost {
   tags        Tag[]      @relation("BlogPostToTag")
   views       PostView[]
 
+  // PERFORMANCE INDEXES
   @@index([title])
   @@index([slug])
   @@index([seriesId])
+  // NEW: Index for filtering by published status (used in WHERE clauses)
+  @@index([published])
+  // NEW: Index for sorting by date (used in ORDER BY clauses)
+  @@index([createdAt])
+  // NEW: Composite index for common query pattern: published posts sorted by date
+  @@index([published, createdAt])
+  // NEW: Index for category filtering (used in WHERE/JOIN)
+  @@index([categoryId])
+  // NEW: Index for author filtering (used in WHERE/JOIN)
+  @@index([authorId])
 }
 
 model Account {

@@ -219,15 +219,15 @@ export function PostCard({
     );
   }
 
-  // Default card variant - completely redesigned for better image display
+  // Default card variant - Eyebrow style layout
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
+        "group relative flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg",
         className,
       )}
     >
-      {/* Cover Image - Using consistent aspect ratio with better image display */}
+      {/* Cover Image */}
       <div className="relative w-full overflow-hidden">
         <div className="relative aspect-[16/9] w-full">
           {post.coverImage ? (
@@ -236,7 +236,7 @@ export function PostCard({
               alt={post.title}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-              className="object-cover transition-transform group-hover:scale-105"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
               priority
             />
           ) : (
@@ -245,125 +245,128 @@ export function PostCard({
             </div>
           )}
 
-          {/* Category overlay on image */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3 pt-6">
-            <div className="flex flex-wrap gap-2">
-              {post.category && (
-                <Badge
-                  variant="outline"
-                  className="bg-background/80 px-2 py-0.5 text-xs backdrop-blur-sm"
-                >
-                  {post.category.name}
-                </Badge>
-              )}
-
-              {post.tags &&
-                post.tags.length > 0 &&
-                post.tags.slice(0, 1).map((tag) => (
+          {/* Category & Tags overlay on image */}
+          {(post.category || (post.tags && post.tags.length > 0)) && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 pt-8">
+              <div className="flex flex-wrap gap-2">
+                {post.category && (
                   <Badge
-                    key={tag.id}
-                    variant="secondary"
-                    className="bg-primary/80 px-2 py-0.5 text-xs text-primary-foreground backdrop-blur-sm"
+                    variant="outline"
+                    className="border-white/30 bg-white/20 px-2.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm"
                   >
-                    {tag.name}
+                    {post.category.name}
                   </Badge>
-                ))}
+                )}
 
-              {post.tags && post.tags.length > 1 && (
-                <Badge
-                  variant="secondary"
-                  className="bg-primary/80 px-2 py-0.5 text-xs text-primary-foreground backdrop-blur-sm"
-                >
-                  +{post.tags.length - 1}
-                </Badge>
-              )}
+                {post.tags &&
+                  post.tags.length > 0 &&
+                  post.tags.slice(0, 2).map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      variant="secondary"
+                      className="bg-primary/90 px-2.5 py-0.5 text-xs font-medium text-primary-foreground backdrop-blur-sm"
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+
+                {post.tags && post.tags.length > 2 && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-white/20 px-2 py-0.5 text-xs text-white backdrop-blur-sm"
+                  >
+                    +{post.tags.length - 2}
+                  </Badge>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col justify-between p-4">
-        <div className="space-y-2">
-          {/* Title */}
-          <h3 className="text-lg font-semibold group-hover:text-primary md:text-xl">
-            <Link
-              href={`/blog/${post.slug}`}
-              className="after:absolute after:inset-0 after:content-['']"
-            >
-              {post.title}
-            </Link>
-          </h3>
+      {/* Content Area */}
+      <div className="flex flex-1 flex-col p-5">
+        {/* Eyebrow - Date at the top */}
+        <time className="mb-2 text-xs font-medium uppercase tracking-wider text-primary/80">
+          {new Date(post.createdAt).toLocaleDateString("tr-TR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </time>
 
-          {/* Excerpt - takes up available space */}
-          <div className="line-clamp-3 text-sm text-muted-foreground">
-            {getContentExcerpt()}
-          </div>
-        </div>
+        {/* Title */}
+        <h3 className="text-lg font-bold leading-tight text-foreground transition-colors group-hover:text-primary md:text-xl">
+          <Link
+            href={`/blog/${post.slug}`}
+            className="after:absolute after:inset-0 after:content-['']"
+          >
+            {post.title}
+          </Link>
+        </h3>
 
-        {/* Author and date fixed at bottom */}
-        <div className="mt-4 border-t pt-3 text-xs text-muted-foreground sm:text-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {post.author.image ? (
-                <Image
-                  src={post.author.image}
-                  alt={post.author.name ?? ""}
-                  className="h-6 w-6 rounded-full"
-                  width={24}
-                  height={24}
-                />
-              ) : (
-                <div className="h-6 w-6 rounded-full bg-muted"></div>
-              )}
-              <span>{post.author.name}</span>
-            </div>
+        {/* Excerpt */}
+        <p className="mt-2.5 flex-1 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+          {getContentExcerpt()}
+        </p>
 
-            <div className="flex items-center gap-3">
-              {/* View count */}
-              {post.viewCount !== undefined && (
-                <div className="flex items-center gap-1" title="Görüntülenme">
-                  <Eye className="h-3 w-3" />
-                  <span>{formatViewCount(post.viewCount)}</span>
-                </div>
-              )}
-
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                <time>
-                  {new Date(post.createdAt).toLocaleDateString("tr-TR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </time>
+        {/* Footer - Author & View Count */}
+        <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-4">
+          {/* Left: Author */}
+          <div className="flex items-center gap-2.5">
+            {post.author.image ? (
+              <Image
+                src={post.author.image}
+                alt={post.author.name ?? ""}
+                className="h-7 w-7 rounded-full ring-2 ring-background"
+                width={28}
+                height={28}
+              />
+            ) : (
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                {post.author.name?.charAt(0)?.toUpperCase() ?? "?"}
               </div>
-            </div>
+            )}
+            <span className="text-sm font-medium text-foreground/80">
+              {post.author.name}
+            </span>
           </div>
+
+          {/* Right: View Count */}
+          {post.viewCount !== undefined && (
+            <div
+              className="flex items-center gap-1.5 text-sm text-muted-foreground"
+              title="Görüntülenme"
+            >
+              <Eye className="h-4 w-4" />
+              <span>{formatViewCount(post.viewCount)}</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Admin Controls */}
       {showAdminControls && (
-        <div className="absolute right-2 top-2 flex gap-0.5 rounded-md bg-background/90 p-0.5 shadow-sm backdrop-blur-sm">
+        <div className="absolute right-3 top-3 flex gap-1 rounded-lg bg-background/95 p-1 shadow-md backdrop-blur-sm">
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 sm:h-7 sm:w-7"
+            className="h-7 w-7 hover:bg-primary/10"
             asChild
           >
             <Link href={`/blog/${post.slug}`} target="_blank">
-              <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <Eye className="h-3.5 w-3.5" />
               <span className="sr-only">Görüntüle</span>
             </Link>
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 sm:h-7 sm:w-7"
+            className="h-7 w-7 hover:bg-primary/10"
             asChild
           >
             <Link href={`/admin/posts/${post.id}/edit`}>
-              <Edit2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <Edit2 className="h-3.5 w-3.5" />
               <span className="sr-only">Düzenle</span>
             </Link>
           </Button>
@@ -371,10 +374,10 @@ export function PostCard({
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 sm:h-7 sm:w-7"
+              className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
               onClick={() => onDeleteClick(post.id, post.title)}
             >
-              <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <Trash2 className="h-3.5 w-3.5" />
               <span className="sr-only">Sil</span>
             </Button>
           )}

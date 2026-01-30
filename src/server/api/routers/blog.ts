@@ -1,6 +1,7 @@
 // src/server/api/routers/blog.ts
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
+import { revalidateTag } from "next/cache";
 
 import {
   createTRPCRouter,
@@ -56,15 +57,36 @@ export const blogRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     return ctx.db.blogPost.findMany({
       where: { published: true },
-      include: {
+      // OPTIMIZATION: Only select fields needed for list view, excluding heavy 'content'
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        coverImage: true,
+        createdAt: true,
+        updatedAt: true,
+        published: true,
+        viewCount: true,
         author: {
           select: {
             name: true,
             image: true,
           },
         },
-        category: true,
-        tags: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        tags: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -103,15 +125,36 @@ export const blogRouter = createTRPCRouter({
       const [posts, total] = await Promise.all([
         ctx.db.blogPost.findMany({
           where,
-          include: {
+          // OPTIMIZATION: Only select fields needed for list view, excluding heavy 'content'
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            coverImage: true,
+            createdAt: true,
+            updatedAt: true,
+            published: true,
+            viewCount: true,
             author: {
               select: {
                 name: true,
                 image: true,
               },
             },
-            category: true,
-            tags: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+            tags: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
           },
           orderBy: { createdAt: "desc" },
           skip,
@@ -143,15 +186,36 @@ export const blogRouter = createTRPCRouter({
 
     return ctx.db.blogPost.findMany({
       where: { published: false },
-      include: {
+      // OPTIMIZATION: Only select fields needed for list view, excluding heavy 'content'
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        coverImage: true,
+        createdAt: true,
+        updatedAt: true,
+        published: true,
+        viewCount: true,
         author: {
           select: {
             name: true,
             image: true,
           },
         },
-        category: true,
-        tags: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        tags: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -672,12 +736,33 @@ export const blogRouter = createTRPCRouter({
         const [posts, total] = await Promise.all([
           ctx.db.blogPost.findMany({
             where,
-            include: {
+            // OPTIMIZATION: Only select fields needed for admin list view, excluding heavy 'content'
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              coverImage: true,
+              createdAt: true,
+              updatedAt: true,
+              published: true,
+              viewCount: true,
               author: {
                 select: { name: true, image: true },
               },
-              category: true,
-              tags: true,
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+              tags: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
             },
             orderBy: { [sortBy]: sortDirection },
             skip: (page - 1) * limit,
@@ -780,7 +865,7 @@ export const blogRouter = createTRPCRouter({
         const slug =
           input.slug || (await generateUniqueSlug(ctx.db, input.title));
 
-        return await ctx.db.blogPost.create({
+        const post = await ctx.db.blogPost.create({
           data: {
             title: input.title,
             slug,
@@ -810,6 +895,11 @@ export const blogRouter = createTRPCRouter({
               : {}),
           },
         });
+
+        // OPTIMIZATION: Invalidate cache after creating a post
+        revalidateTag("blog-posts");
+
+        return post;
       } catch (error) {
         console.error("Error creating blog post:", error);
         throw new TRPCError({
@@ -916,6 +1006,9 @@ export const blogRouter = createTRPCRouter({
         },
       });
 
+      // OPTIMIZATION: Invalidate cache after updating a post
+      revalidateTag("blog-posts");
+
       return updatedPost;
     }),
 
@@ -929,9 +1022,14 @@ export const blogRouter = createTRPCRouter({
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
 
-      return ctx.db.blogPost.delete({
+      const deletedPost = await ctx.db.blogPost.delete({
         where: { id: input.id },
       });
+
+      // OPTIMIZATION: Invalidate cache after deleting a post
+      revalidateTag("blog-posts");
+
+      return deletedPost;
     }),
 
   // ---------------------------------------------------

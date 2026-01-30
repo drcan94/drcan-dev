@@ -1,10 +1,29 @@
 import { type Metadata } from "next";
 import { Suspense } from "react";
+import { unstable_cache } from "next/cache";
 
 import { api } from "@/trpc/server";
 import { PaginatedPosts } from "@/components/blog/paginated-posts";
 import { BlogSearch } from "@/components/blog/search";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// OPTIMIZATION: Cache blog posts for 60 seconds to reduce DB hits
+// Revalidates when posts are created/updated via revalidateTag("blog-posts")
+const getCachedPaginatedPosts = unstable_cache(
+  async (page: number, limit: number, categoryId?: string, tagId?: string) => {
+    return api.blog.getPaginated({
+      page,
+      limit,
+      categoryId,
+      tagId,
+    });
+  },
+  ["blog-posts-paginated"],
+  {
+    revalidate: 60, // Revalidate every 60 seconds
+    tags: ["blog-posts"], // Can be invalidated with revalidateTag("blog-posts")
+  }
+);
 
 export const metadata: Metadata = {
   title: "Blog Yazıları - DrCan.dev",
@@ -41,13 +60,13 @@ export default async function BlogPage({
   const tagId =
     typeof searchParams.etiket === "string" ? searchParams.etiket : undefined;
 
-  // Server-side initial data fetch for better SEO and performance
-  const initialData = await api.blog.getPaginated({
+  // OPTIMIZATION: Use cached query to reduce DB hits on page refreshes
+  const initialData = await getCachedPaginatedPosts(
     page,
-    limit: 9, // Match the limit in the client component
+    9, // Match the limit in the client component
     categoryId,
-    tagId,
-  });
+    tagId
+  );
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-4 md:py-8">
