@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FileText, Tag, Trash2, Eye, Edit2, Calendar } from "lucide-react";
+import { FileText, Tag, Trash2, Eye, Edit2, Calendar, BarChart2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,18 @@ interface Post {
     name: string;
   }[];
   published?: boolean;
+  viewCount?: number;
+}
+
+// Format view count for display
+function formatViewCount(count: number): string {
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)}M`;
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}K`;
+  }
+  return count.toString();
 }
 
 interface PostCardProps {
@@ -117,17 +129,27 @@ export function PostCard({
           {/* Meta info at bottom */}
           <div className="mt-auto pt-2 text-xs text-muted-foreground">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                <time>
-                  {new Date(
-                    post.updatedAt || post.createdAt,
-                  ).toLocaleDateString("tr-TR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </time>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  <time>
+                    {new Date(
+                      post.updatedAt || post.createdAt,
+                    ).toLocaleDateString("tr-TR", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </time>
+                </div>
+
+                {/* View count */}
+                {post.viewCount !== undefined && (
+                  <div className="flex items-center gap-1" title="Görüntülenme">
+                    <Eye className="h-3 w-3" />
+                    <span>{formatViewCount(post.viewCount)}</span>
+                  </div>
+                )}
               </div>
 
               {/* Category and tags */}
@@ -296,15 +318,25 @@ export function PostCard({
               <span>{post.author.name}</span>
             </div>
 
-            <div className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              <time>
-                {new Date(post.createdAt).toLocaleDateString("tr-TR", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </time>
+            <div className="flex items-center gap-3">
+              {/* View count */}
+              {post.viewCount !== undefined && (
+                <div className="flex items-center gap-1" title="Görüntülenme">
+                  <Eye className="h-3 w-3" />
+                  <span>{formatViewCount(post.viewCount)}</span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <time>
+                  {new Date(post.createdAt).toLocaleDateString("tr-TR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </time>
+              </div>
             </div>
           </div>
         </div>

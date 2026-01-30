@@ -57,6 +57,7 @@ model BlogPost {
   coverImage String?
   seriesId   String?
   seriesOrder Int?
+  viewCount  Int      @default(0)
   author     User     @relation(fields: [authorId], references: [id])
   category   Category @relation(fields: [categoryId], references: [id])
   series     Series?  @relation(fields: [seriesId], references: [id])

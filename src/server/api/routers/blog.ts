@@ -933,4 +933,32 @@ export const blogRouter = createTRPCRouter({
         where: { id: input.id },
       });
     }),
+
+  // ---------------------------------------------------
+  // 10) Görüntülenme sayısını artırma (public)
+  // ---------------------------------------------------
+  incrementViewCount: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const post = await ctx.db.blogPost.findUnique({
+        where: { slug: input.slug },
+        select: { id: true, published: true },
+      });
+
+      if (!post || !post.published) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      return ctx.db.blogPost.update({
+        where: { slug: input.slug },
+        data: {
+          viewCount: {
+            increment: 1,
+          },
+        },
+        select: {
+          viewCount: true,
+        },
+      });
+    }),
 });

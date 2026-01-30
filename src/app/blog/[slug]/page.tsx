@@ -8,6 +8,7 @@ import {
   Tag as TagIcon,
   BookOpen,
   ChevronRight,
+  Eye,
 } from "lucide-react";
 
 import { api } from "@/trpc/server";
@@ -15,6 +16,18 @@ import { Button } from "@/components/ui/button";
 import { Editor } from "@/components/DynamicEditor";
 import { auth } from "@/server/auth";
 import { Badge } from "@/components/ui/badge";
+import { ViewTracker } from "@/components/blog/view-tracker";
+
+// Format view count for display
+function formatViewCount(count: number): string {
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)}M`;
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}K`;
+  }
+  return count.toString();
+}
 
 export async function generateMetadata({
   params,
@@ -54,6 +67,9 @@ export default async function BlogPostPage({
 
     return (
       <div className="container mx-auto max-w-4xl px-4 py-8 md:py-12">
+        {/* Track view count - client component */}
+        <ViewTracker slug={params.slug} />
+
         <article className="prose prose-lg dark:prose-invert">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-3xl font-bold md:text-4xl">{post.title}</h1>
@@ -165,6 +181,13 @@ export default async function BlogPostPage({
                 day: "numeric",
               })}
             </time>
+
+            {/* View count */}
+            <span>•</span>
+            <div className="flex items-center gap-1" title="Görüntülenme sayısı">
+              <Eye className="h-4 w-4" />
+              <span>{formatViewCount(post.viewCount ?? 0)} görüntülenme</span>
+            </div>
 
             {/* Category badge */}
             {post.category && (
