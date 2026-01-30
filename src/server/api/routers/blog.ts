@@ -935,7 +935,7 @@ export const blogRouter = createTRPCRouter({
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
 
-      const { id, tagIds, ...data } = input;
+      const { id, tagIds, categoryId: inputCategoryId, seriesId, seriesOrder, slug: inputSlug, ...data } = input;
 
       // Get current post data to compare tags
       const currentPost = await ctx.db.blogPost.findUnique({
@@ -948,7 +948,7 @@ export const blogRouter = createTRPCRouter({
       }
 
       // If no category is provided, find the "genel" category
-      let categoryId = input.categoryId;
+      let categoryId = inputCategoryId;
       if (!categoryId) {
         const generalCategory = await ctx.db.category.findFirst({
           where: { slug: "genel" },
@@ -965,11 +965,11 @@ export const blogRouter = createTRPCRouter({
 
       // Generate slug if title has changed and slug is not manually set
       let slug = currentPost.slug;
-      if (input.title !== currentPost.title && !input.slug) {
+      if (input.title !== currentPost.title && !inputSlug) {
         slug = await generateUniqueSlug(ctx.db, input.title, id);
-      } else if (input.slug && input.slug !== currentPost.slug) {
+      } else if (inputSlug && inputSlug !== currentPost.slug) {
         // Manually provided slug
-        slug = input.slug;
+        slug = inputSlug;
       }
 
       // Update post with new data
@@ -978,7 +978,9 @@ export const blogRouter = createTRPCRouter({
         data: {
           ...data,
           slug,
-          categoryId,
+          category: {
+            connect: { id: categoryId },
+          },
           tags: {
             // If tagIds is provided, we need to disconnect current tags and connect the new ones
             ...(tagIds
@@ -988,13 +990,13 @@ export const blogRouter = createTRPCRouter({
                 }
               : {}),
           },
-          ...(input.seriesId !== undefined
-            ? input.seriesId
+          ...(seriesId !== undefined
+            ? seriesId
               ? {
                   series: {
-                    connect: { id: input.seriesId },
+                    connect: { id: seriesId },
                   },
-                  seriesOrder: input.seriesOrder || 1,
+                  seriesOrder: seriesOrder || 1,
                 }
               : {
                   series: {
